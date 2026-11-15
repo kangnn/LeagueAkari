@@ -98,10 +98,27 @@ export class HextechAugmentOverlayController {
             // capture + recognition under one second. Slow reads stay at full
             // cadence so throttling cannot consume the frame's freshness budget.
             const stable = this._stableFrames >= 3 && (this._latest?.frame.elapsedMs ?? 0) <= 300
-            if (stable && !this._skipStableCapture) this._skipStableCapture = true
+            const idle = this._state.status === 'unrecognized'
+            if ((stable || idle) && !this._skipStableCapture) this._skipStableCapture = true
             else {
               this._skipStableCapture = false
-              this._worker.capture(this._focusedCapture)
+              const latest = this._latest
+              const regions = latest
+                ? latest.cards.map((card) => {
+                    // Include longer replacement titles while excluding animated card borders.
+                    const width = Math.max(
+                      latest.frame.window.width * 0.18,
+                      card.width + latest.frame.window.width * 0.02
+                    )
+                    return {
+                      x: card.x + card.width / 2 - width / 2,
+                      y: card.y - latest.frame.window.height * 0.01,
+                      width,
+                      height: card.height + latest.frame.window.height * 0.02
+                    }
+                  })
+                : []
+              this._worker.capture(this._focusedCapture, regions)
             }
           }
           if (

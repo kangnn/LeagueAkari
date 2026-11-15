@@ -1,4 +1,4 @@
-import type { OcrFrame } from '@shared/types/hextech-augment'
+import type { OcrFrame, OcrWord } from '@shared/types/hextech-augment'
 import { app } from 'electron'
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
 import path from 'node:path'
@@ -80,10 +80,10 @@ export class RecognitionWorkerController {
     }, 15000)
   }
 
-  capture(focused = false) {
+  capture(focused = false, regions: Pick<OcrWord, 'x' | 'y' | 'width' | 'height'>[] = []) {
     if (!this._ready || !this._process || this._busy) return
     this._busy = true
-    this._process.stdin.write(`${JSON.stringify({ type: 'capture', focused })}\n`)
+    this._process.stdin.write(`${JSON.stringify({ type: 'capture', focused, regions })}\n`)
     this._timeout = setTimeout(() => {
       this.stop()
       this._onMessage({ type: 'error', message: 'Windows OCR capture timed out' })

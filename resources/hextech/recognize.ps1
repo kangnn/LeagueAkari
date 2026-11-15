@@ -35,6 +35,34 @@ if (-not $engine) { Write-Result @{ type = 'error'; message = 'No Windows OCR la
 $languages = @([Windows.Media.Ocr.OcrEngine]::AvailableRecognizerLanguages | ForEach-Object { $_.LanguageTag })
 Write-Result @{ type = 'ready'; languages = $languages; language = $engine.RecognizerLanguage.LanguageTag }
 
+function Get-TitleSignature($Bitmap, $Regions) {
+    $bytes = New-Object System.IO.MemoryStream
+    $hash = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        foreach ($region in $Regions) {
+            $x = [Math]::Max(0, [int][Math]::Floor($region.x))
+            $y = [Math]::Max(0, [int][Math]::Floor($region.y))
+            $width = [Math]::Min([int][Math]::Ceiling($region.width), $Bitmap.Width - $x)
+            $height = [Math]::Min([int][Math]::Ceiling($region.height), $Bitmap.Height - $y)
+            if ($width -le 0 -or $height -le 0) { return $null }
+            $rect = New-Object System.Drawing.Rectangle($x, $y, $width, $height)
+            $tile = $Bitmap.Clone($rect, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            $locked = $null
+            try {
+                $tileRect = New-Object System.Drawing.Rectangle(0, 0, $width, $height)
+                $locked = $tile.LockBits($tileRect, [System.Drawing.Imaging.ImageLockMode]::ReadOnly, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+                $buffer = New-Object byte[] ([Math]::Abs($locked.Stride) * $height)
+                [System.Runtime.InteropServices.Marshal]::Copy($locked.Scan0, $buffer, 0, $buffer.Length)
+                $bytes.Write($buffer, 0, $buffer.Length)
+            } finally {
+                if ($null -ne $locked) { $tile.UnlockBits($locked) }
+                $tile.Dispose()
+            }
+        }
+        [Convert]::ToBase64String($hash.ComputeHash($bytes.ToArray()))
+    } finally { $hash.Dispose(); $bytes.Dispose() }
+}
+
 function Recognize-Frame {
     $bitmap = $null; $graphics = $null; $memory = $null; $stream = $null; $writer = $null; $software = $null
     $startedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
@@ -63,17 +91,30 @@ function Recognize-Frame {
             } finally { if ($previousContext -ne [IntPtr]::Zero) { $null = [HextechWindow]::SetThreadDpiAwarenessContext($previousContext) } }
         }
         $width = $bitmap.Width; $height = $bitmap.Height
+        $window = [ordered]@{ id = $handle.ToInt64().ToString(); x = $left; y = $top; width = $width; height = $height }
+        $signature = $null; $cacheKey = $null
+        if (@($ReuseRegions).Count -eq 3) {
+            # Reuse only title slots confirmed by main. Pixel changes, movement,
+            # changed slots or the three-second deadline always force a new OCR read.
+            $signature = Get-TitleSignature $bitmap $ReuseRegions
+            $cacheKey = ($window | ConvertTo-Json -Compress) + ($ReuseRegions | ConvertTo-Json -Compress)
+            $cached = $script:lastRecognition
+            if ($signature -and $cached -and $cached.key -eq $cacheKey -and $cached.signature -eq $signature -and $startedAt - $cached.readAt -lt 3000) {
+                Write-Result @{ type = 'frame'; capturedAt = $startedAt; elapsedMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $startedAt; window = $window; lines = $cached.lines; reused = $true }
+                return
+            }
+        }
         $cropLeft = 0; $cropTop = 0
         if ($Focused) {
             # Preferred after a verified sighting, and alternated with full reads
             # during acquisition. A failed focused read falls back to the full window.
-            $cropLeft = [int]($width * 0.1); $cropTop = [int]($height * 0.3)
-            $region = New-Object System.Drawing.Rectangle($cropLeft, $cropTop, [int]($width * 0.8), [int]($height * 0.22))
+            $cropLeft = [int]($width * 0.1); $cropTop = [int]($height * 0.34)
+            $region = New-Object System.Drawing.Rectangle($cropLeft, $cropTop, [int]($width * 0.8), [int]($height * 0.14))
             $cropped = $bitmap.Clone($region, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
             $bitmap.Dispose(); $bitmap = $cropped
         }
         # Limit OCR work on very large monitors; coordinates are mapped back to physical pixels.
-        $maximumScale = if ($Focused) { 2.0 } else { 1.5 }
+        $maximumScale = if ($Focused) { 3.0 } else { 1.5 }
         $scale = [Math]::Min($maximumScale, [Math]::Min(1920.0 / $bitmap.Width, [Windows.Media.Ocr.OcrEngine]::MaxImageDimension / [double][Math]::Max($bitmap.Width, $bitmap.Height)))
         if ($scale -ne 1) {
             $scaled = New-Object System.Drawing.Bitmap($bitmap, [int]($bitmap.Width * $scale), [int]($bitmap.Height * $scale))
@@ -95,14 +136,15 @@ function Recognize-Frame {
                 @{ text = $_.Text; x = $_.BoundingRect.X / $scale + $cropLeft; y = $_.BoundingRect.Y / $scale + $cropTop; width = $_.BoundingRect.Width / $scale; height = $_.BoundingRect.Height / $scale }
             }) }
         })
-        Write-Result @{ type = 'frame'; capturedAt = $startedAt; elapsedMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $startedAt; window = @{ id = $handle.ToInt64().ToString(); x = $left; y = $top; width = $width; height = $height }; lines = $lines }
+        $script:lastRecognition = if ($signature) { @{ key = $cacheKey; signature = $signature; readAt = $startedAt; lines = $lines } } else { $null }
+        Write-Result @{ type = 'frame'; capturedAt = $startedAt; elapsedMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $startedAt; window = $window; lines = $lines; reused = $false }
     } catch { Write-Result @{ type = 'error'; message = $_.Exception.Message; capturedAt = $startedAt } }
     finally {
         foreach ($resource in @($software, $writer, $stream, $memory, $graphics, $bitmap)) { if ($null -ne $resource) { $resource.Dispose() } }
     }
 }
 
-if ($ImagePath) { Recognize-Frame; exit }
+if ($ImagePath) { Recognize-Frame; return }
 while ($null -ne ($line = [Console]::ReadLine())) {
-    try { $command = $line | ConvertFrom-Json; if ($command.type -eq 'capture') { $Focused = $command.focused -eq $true; Recognize-Frame } } catch { Write-Result @{ type = 'error'; message = $_.Exception.Message } }
+    try { $command = $line | ConvertFrom-Json; if ($command.type -eq 'capture') { $Focused = $command.focused -eq $true; $ReuseRegions = @($command.regions); Recognize-Frame } } catch { Write-Result @{ type = 'error'; message = $_.Exception.Message } }
 }
