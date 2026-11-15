@@ -41,3 +41,9 @@ The user reported that no ratings were visible in the game despite the renderer 
 Real reroll/selection click-through verification remains pending: the elevated game did not accept the desktop automation clicks. A modal covering the middle card correctly caused incomplete recognition to hide all labels. Unit tests for reroll replacement are supplementary and do not substitute for that remaining real-game check. Other display resolutions and exclusive fullscreen remain unverified.
 
 The cleaned app.asar contains 4,956 entries and no nested dist artifacts. Distribution staging excludes runtime logs. Build/type checks and the full 618-test suite passed before this packaged run; the recorded unit result is not a claim of complete in-game acceptance.
+
+### Borderless visibility comparison
+
+The disconnected test process was terminated with an administrator taskkill request and the private KIWI game was restarted with `General.WindowMode=2` through LCU. The running borderless client area was 1024×768. With Fiora (114), the production OCR/rating flow recognized Don't Blink (1026, A/102.54), Infernal Soul (1046, D/88.62), and Poltergeist (1347, D/83.58). A computer-use capture of the actual game composition visibly showed all three rating panels above the corresponding card names. This capture temporarily disabled only the custom overlay's capture protection for two seconds via the Electron inspector; restoration was scheduled in the same operation. Production code was unchanged. No synthetic labels or scores were injected.
+
+This proves actual borderless composition for that test resolution. It does not prove exclusive-fullscreen support, physical 4K borderless placement, or reroll click-through. The elevated game still did not accept the desktop automation click, so the real reroll gate remains open. The original WindowMode=0 is recorded for restoration after the test.
