@@ -2,6 +2,7 @@ hextechAugment:
   title: 游戏内海克斯评分
   enabled: 自动识别三个选项并显示评级
   description: 仅在海克斯对局中识别前台游戏窗口；低置信度不显示评分，重掷后重新识别
+  displayHelp: 评分位于三张卡片名称上方。若全屏下看不到，请在游戏的视频设置中切换为“无边框”。
   noData: 暂无评分
   noSource: 数据未就绪
   versionUnknown: 版本未知

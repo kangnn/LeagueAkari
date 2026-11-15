@@ -72,6 +72,9 @@
             <NSwitch :value="augmentStore.settings.enabled" @update:value="setAugmentEnabled" />
           </SettingsRow>
           <div class="flex flex-col gap-2 p-3 text-sm">
+            <NAlert v-if="augmentStore.settings.enabled" type="info" :show-icon="false">
+              {{ t('hextechAugment.displayHelp') }}
+            </NAlert>
             <NText depth="3">{{ t(`hextechAugment.statuses.${augmentStore.status}`) }}</NText>
             <NAlert v-if="augmentStore.error" type="warning" :show-icon="false">{{
               augmentStore.error
