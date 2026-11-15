@@ -80,10 +80,10 @@ export class RecognitionWorkerController {
     }, 15000)
   }
 
-  capture() {
+  capture(focused = false) {
     if (!this._ready || !this._process || this._busy) return
     this._busy = true
-    this._process.stdin.write('{"type":"capture"}\n')
+    this._process.stdin.write(`${JSON.stringify({ type: 'capture', focused })}\n`)
     this._timeout = setTimeout(() => {
       this.stop()
       this._onMessage({ type: 'error', message: 'Windows OCR capture timed out' })

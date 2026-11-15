@@ -12,6 +12,7 @@ import { HextechAugmentSettings, HextechAugmentState } from './state'
 
 const worker = vi.hoisted(() => ({
   send: null as null | ((message: RecognitionWorkerMessage) => void),
+  capture: vi.fn(),
   stop: vi.fn()
 }))
 vi.mock('./recognition-worker-controller', () => ({
@@ -20,7 +21,9 @@ vi.mock('./recognition-worker-controller', () => ({
       worker.send = send
     }
     start() {}
-    capture() {}
+    capture(focused = false) {
+      worker.capture(focused)
+    }
     stop() {
       worker.stop()
     }
@@ -188,6 +191,58 @@ describe.skipIf(process.platform !== 'win32')('augment overlay state and async f
     worker.send!(frame())
     worker.send!(frame([1, 4, 3]))
     expect(state.snapshot?.labels[1]).toMatchObject({ id: 4, tier: null, performance: null })
+  })
+
+  it('reduces repeat captures for stable quick reads and resumes fast reads after a reroll', async () => {
+    setup()
+    await vi.advanceTimersByTimeAsync(0)
+    worker.send!({ type: 'ready', language: 'zh-CN', languages: ['zh-CN'] })
+    for (let i = 0; i < 3; i++) worker.send!(frame())
+    worker.capture.mockClear()
+    await vi.advanceTimersByTimeAsync(700)
+    expect(worker.capture).toHaveBeenCalledTimes(1)
+    worker.send!(frame([1, 4, 3]))
+    worker.capture.mockClear()
+    await vi.advanceTimersByTimeAsync(700)
+    expect(worker.capture).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps slow recognition at full cadence to preserve the frame freshness budget', async () => {
+    setup()
+    await vi.advanceTimersByTimeAsync(0)
+    worker.send!({ type: 'ready', language: 'zh-CN', languages: ['zh-CN'] })
+    for (let i = 0; i < 3; i++) worker.send!({ ...frame(), elapsedMs: 450 })
+    worker.capture.mockClear()
+    await vi.advanceTimersByTimeAsync(700)
+    expect(worker.capture).toHaveBeenCalledTimes(2)
+  })
+
+  it('prefers focused reads after a verified selection and falls back after an incomplete read', async () => {
+    setup()
+    worker.send!({ type: 'ready', language: 'zh-CN', languages: ['zh-CN'] })
+    expect(worker.capture).toHaveBeenLastCalledWith(false)
+    worker.send!(frame())
+    await vi.advanceTimersByTimeAsync(350)
+    expect(worker.capture).toHaveBeenLastCalledWith(true)
+    const incomplete = frame()
+    incomplete.lines.pop()
+    worker.send!(incomplete)
+    await vi.advanceTimersByTimeAsync(350)
+    expect(worker.capture).toHaveBeenLastCalledWith(false)
+  })
+
+  it('tries a title-region read when full-window acquisition fails, without publishing guessed cards', async () => {
+    const { state } = setup()
+    worker.send!({ type: 'ready', language: 'zh-CN', languages: ['zh-CN'] })
+    const incomplete = frame()
+    incomplete.lines.pop()
+    worker.send!(incomplete)
+    await vi.advanceTimersByTimeAsync(350)
+    expect(worker.capture).toHaveBeenLastCalledWith(true)
+    expect(state.snapshot).toBeNull()
+    worker.send!(incomplete)
+    await vi.advanceTimersByTimeAsync(350)
+    expect(worker.capture).toHaveBeenLastCalledWith(false)
   })
 
   it('hides unrecognized selections and expires a frame when capture stalls', async () => {

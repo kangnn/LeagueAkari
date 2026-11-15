@@ -31,6 +31,9 @@ export class HextechAugmentOverlayController {
   private _failed = false
   private _workerReady = false
   private _retryRatingsAt = 0
+  private _stableFrames = 0
+  private _skipStableCapture = false
+  private _focusedCapture = false
 
   constructor(
     private readonly _leagueClient: LeagueClientMain,
@@ -90,7 +93,17 @@ export class HextechAugmentOverlayController {
         void this._loadRatings(this._generation, championId)
         this._timer = setInterval(() => {
           if (this._failed) return
-          if (this._workerReady) this._worker.capture()
+          if (this._workerReady) {
+            // At most 700 ms between requests while quick, stable reads keep
+            // capture + recognition under one second. Slow reads stay at full
+            // cadence so throttling cannot consume the frame's freshness budget.
+            const stable = this._stableFrames >= 3 && (this._latest?.frame.elapsedMs ?? 0) <= 300
+            if (stable && !this._skipStableCapture) this._skipStableCapture = true
+            else {
+              this._skipStableCapture = false
+              this._worker.capture(this._focusedCapture)
+            }
+          }
           if (
             !this._ratingsAbort &&
             Date.now() >= this._retryRatingsAt &&
@@ -165,13 +178,27 @@ export class HextechAugmentOverlayController {
       }
     })
     if (cards.length !== 3) {
+      const focused = this._focusedCapture
       this._clear()
+      // Alternate a title-region probe with full reads during acquisition. A
+      // difficult full frame must not prevent the first focused read forever.
+      this._focusedCapture = !focused
       runInAction(() => {
         this._state.status = 'unrecognized'
       })
       return
     }
     // Always replace the whole selection. A rerolled card cannot retain a previous card's score.
+    const previous = this._latest
+    const unchanged =
+      previous &&
+      (['id', 'x', 'y', 'width', 'height'] as const).every(
+        (key) => previous.frame.window[key] === message.window[key]
+      ) &&
+      previous.cards.every((card, slot) => card.id === cards[slot].id)
+    this._stableFrames = unchanged ? Math.min(3, this._stableFrames + 1) : 1
+    this._focusedCapture = true
+    if (!unchanged) this._skipStableCapture = false
     this._latest = { frame: message, cards }
     this._publish()
     if (this._expiry) clearTimeout(this._expiry)
@@ -255,6 +282,9 @@ export class HextechAugmentOverlayController {
 
   private _clear() {
     this._latest = null
+    this._stableFrames = 0
+    this._skipStableCapture = false
+    this._focusedCapture = false
     if (this._expiry) clearTimeout(this._expiry)
     this._expiry = null
     runInAction(() => {

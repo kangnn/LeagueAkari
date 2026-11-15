@@ -1,4 +1,4 @@
-param([string]$ImagePath)
+param([string]$ImagePath, [switch]$Focused)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
@@ -63,10 +63,20 @@ function Recognize-Frame {
             } finally { if ($previousContext -ne [IntPtr]::Zero) { $null = [HextechWindow]::SetThreadDpiAwarenessContext($previousContext) } }
         }
         $width = $bitmap.Width; $height = $bitmap.Height
+        $cropLeft = 0; $cropTop = 0
+        if ($Focused) {
+            # Preferred after a verified sighting, and alternated with full reads
+            # during acquisition. A failed focused read falls back to the full window.
+            $cropLeft = [int]($width * 0.1); $cropTop = [int]($height * 0.3)
+            $region = New-Object System.Drawing.Rectangle($cropLeft, $cropTop, [int]($width * 0.8), [int]($height * 0.22))
+            $cropped = $bitmap.Clone($region, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            $bitmap.Dispose(); $bitmap = $cropped
+        }
         # Limit OCR work on very large monitors; coordinates are mapped back to physical pixels.
-        $scale = [Math]::Min(1.5, [Math]::Min(1920.0 / $width, [Windows.Media.Ocr.OcrEngine]::MaxImageDimension / [double][Math]::Max($width, $height)))
+        $maximumScale = if ($Focused) { 2.0 } else { 1.5 }
+        $scale = [Math]::Min($maximumScale, [Math]::Min(1920.0 / $bitmap.Width, [Windows.Media.Ocr.OcrEngine]::MaxImageDimension / [double][Math]::Max($bitmap.Width, $bitmap.Height)))
         if ($scale -ne 1) {
-            $scaled = New-Object System.Drawing.Bitmap($bitmap, [int]($width * $scale), [int]($height * $scale))
+            $scaled = New-Object System.Drawing.Bitmap($bitmap, [int]($bitmap.Width * $scale), [int]($bitmap.Height * $scale))
             $bitmap.Dispose(); $bitmap = $scaled
         }
         $memory = New-Object System.IO.MemoryStream
@@ -82,7 +92,7 @@ function Recognize-Frame {
         $result = Await-Operation ($engine.RecognizeAsync($software)) ([Windows.Media.Ocr.OcrResult])
         $lines = @($result.Lines | ForEach-Object {
             @{ words = @($_.Words | ForEach-Object {
-                @{ text = $_.Text; x = $_.BoundingRect.X / $scale; y = $_.BoundingRect.Y / $scale; width = $_.BoundingRect.Width / $scale; height = $_.BoundingRect.Height / $scale }
+                @{ text = $_.Text; x = $_.BoundingRect.X / $scale + $cropLeft; y = $_.BoundingRect.Y / $scale + $cropTop; width = $_.BoundingRect.Width / $scale; height = $_.BoundingRect.Height / $scale }
             }) }
         })
         Write-Result @{ type = 'frame'; capturedAt = $startedAt; elapsedMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $startedAt; window = @{ id = $handle.ToInt64().ToString(); x = $left; y = $top; width = $width; height = $height }; lines = $lines }
@@ -94,5 +104,5 @@ function Recognize-Frame {
 
 if ($ImagePath) { Recognize-Frame; exit }
 while ($null -ne ($line = [Console]::ReadLine())) {
-    try { $command = $line | ConvertFrom-Json; if ($command.type -eq 'capture') { Recognize-Frame } } catch { Write-Result @{ type = 'error'; message = $_.Exception.Message } }
+    try { $command = $line | ConvertFrom-Json; if ($command.type -eq 'capture') { $Focused = $command.focused -eq $true; Recognize-Frame } } catch { Write-Result @{ type = 'error'; message = $_.Exception.Message } }
 }
