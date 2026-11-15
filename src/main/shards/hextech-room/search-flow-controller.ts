@@ -1,3 +1,4 @@
+import { i18next } from '@main/i18n'
 import type { HextechRoomEvent } from '@shared/types/hextech-room'
 import type { LcuEvent } from '@shared/types/league-client/event'
 import { type IReactionDisposer, reaction, runInAction } from 'mobx'
@@ -81,14 +82,14 @@ export class HextechRoomSearchFlowController {
       this.search.stop()
       return this.search.status()
     }
-    if (this._busy) throw new Error('A room operation is already in progress')
+    if (this._busy) throw new Error(i18next.t('hextech-room-main.operation-busy'))
     if (this._leagueClient.state.connectionState !== 'connected')
-      throw new Error('League Client is disconnected')
+      throw new Error(i18next.t('hextech-room-main.disconnected'))
     if (
       this._leagueClient.data.gameflow.phase &&
       !['None', 'Lobby'].includes(this._leagueClient.data.gameflow.phase)
     )
-      throw new Error('Room search is unavailable during a game')
+      throw new Error(i18next.t('hextech-room-main.in-game'))
     this._busy = true
     const generation = ++this._commandGeneration
     runInAction(() => {

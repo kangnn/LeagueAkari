@@ -1,3 +1,4 @@
+import { i18next } from '@main/i18n'
 import type {
   HextechLobby,
   HextechRoomPolicy,
@@ -145,13 +146,29 @@ export function selectLobby(lobbies: HextechLobby[], policy: HextechRoomPolicy =
 
 export function summarizeLobby(lobby?: HextechLobby) {
   if (!lobby) return undefined
-  const parts = [`${lobby.playerCount ?? '?'}/${lobby.maxHumanPlayers ?? '?'} 人`]
-  if (lobby.mapId !== undefined) parts.push(`地图 ${lobby.mapId}`)
-  if (lobby.gameMode) parts.push(`模式 ${lobby.gameMode}`)
-  if (lobby.inviteCount !== undefined) parts.push(`邀请 ${lobby.inviteCount}`)
+  const parts = [
+    i18next.t('hextech-room-main.summary.players', {
+      players: lobby.playerCount ?? '?',
+      maximum: lobby.maxHumanPlayers ?? '?'
+    })
+  ]
+  if (lobby.mapId !== undefined)
+    parts.push(i18next.t('hextech-room-main.summary.map', { map: lobby.mapId }))
+  if (lobby.gameMode)
+    parts.push(i18next.t('hextech-room-main.summary.mode', { mode: lobby.gameMode }))
+  if (lobby.inviteCount !== undefined)
+    parts.push(i18next.t('hextech-room-main.summary.invites', { invites: lobby.inviteCount }))
   // Spectator state only exists for a joined lobby, and an unknown gate is not worth a log line.
   if (lobby.spectatorsAllowed === true) {
-    parts.push(`观战 ${lobby.spectatorCount ?? 0}/${lobby.maxSpectators ?? '?'}`)
+    parts.push(
+      i18next.t('hextech-room-main.summary.spectators', {
+        spectators: lobby.spectatorCount ?? 0,
+        maximum: lobby.maxSpectators ?? '?'
+      })
+    )
   }
-  return `房间 ${lobby.id}（${parts.join('，')}）`
+  return i18next.t('hextech-room-main.summary.room', {
+    id: lobby.id,
+    details: parts.join(i18next.t('hextech-room-main.summary.separator'))
+  })
 }

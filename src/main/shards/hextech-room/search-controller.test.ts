@@ -1,10 +1,13 @@
+import { i18next } from '@main/i18n'
 import type {
   HextechLobby,
   HextechLobbyProvider,
   HextechRoomError,
   HextechRoomEvent
 } from '@shared/types/hextech-room'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import fs from 'node:fs'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import YAML from 'yaml'
 
 import { DEFAULT_POLICY, evaluateJoinedLobby, evaluateLobby } from './eligibility'
 import {
@@ -13,6 +16,21 @@ import {
   normalizeJoinedLobby
 } from './lobby-provider'
 import { SearchController } from './search-controller'
+
+vi.mock('@main/i18n', async () => ({ i18next: (await import('i18next')).default }))
+
+beforeAll(async () => {
+  await i18next.init({
+    lng: 'zh-CN',
+    fallbackLng: 'zh-CN',
+    interpolation: { escapeValue: false },
+    defaultNS: 'main',
+    resources: {
+      en: { main: YAML.parse(fs.readFileSync('src/shared/i18n/en/main.yaml', 'utf8')) },
+      'zh-CN': { main: YAML.parse(fs.readFileSync('src/shared/i18n/zh-CN/main.yaml', 'utf8')) }
+    }
+  })
+})
 
 const candidate = (id = 'room', players = 2): HextechLobby => ({
   id,
@@ -197,6 +215,29 @@ describe('migrated room search behavior', () => {
     }
     expect(await controller.leave()).toMatchObject({ left: false, lastError: 'client busy' })
     expect(events.at(-1)?.type).toBe('error')
+  })
+
+  it('uses the selected app language for rejection explanations and room details', async () => {
+    const previousLanguage = i18next.language
+    try {
+      for (const [language, explanation, roomDetails] of [
+        ['zh-CN', '邀请名额已满（上限 50），无法加入', '2/10 人'],
+        ['en', 'Cannot join; invitation capacity is full (limit 50)', 'Players 2/10']
+      ]) {
+        await i18next.changeLanguage(language)
+        const provider = new Provider()
+        provider.joinFailure = Object.assign(new Error('PARTY_INVITE_LIMIT'), { skip: true })
+        const events: HextechRoomEvent[] = []
+        const controller = search(provider, { emit: (event) => events.push(event) })
+        await controller.start()
+        const rejected = events.find((event) => event.type === 'skipped')
+        expect(rejected?.message).toBe(explanation)
+        expect(rejected?.selectedSummary).toContain(roomDetails)
+        controller.stop()
+      }
+    } finally {
+      await i18next.changeLanguage(previousLanguage)
+    }
   })
 })
 

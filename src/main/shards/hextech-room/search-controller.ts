@@ -1,3 +1,4 @@
+import { i18next } from '@main/i18n'
 import {
   type HextechLobby,
   type HextechLobbyProvider,
@@ -79,22 +80,8 @@ function listSignature(lobbies: HextechLobby[]) {
   )
 }
 
-/** Reason codes are stable identifiers; the log shows the readable form so a leave is explainable. */
-const REASON_LABELS: Readonly<Record<string, string>> = Object.freeze({
-  'not-target-map': '地图不是嚎哭深渊',
-  'not-5v5': '不是 10 人房间',
-  'password-or-unknown': '需要密码或密码状态未知',
-  'not-joinable': '房间已不可加入',
-  full: '房间已满',
-  'name-mismatch': '房间名不含关键词',
-  'too-few-players': '人数不足',
-  'mode-unknown': '无法确认模式',
-  'not-mayhem-aram': '不是海克斯乱斗',
-  'invites-exhausted': '邀请已达上限且人数仍然不足'
-})
-
 function describeReason(reason?: string) {
-  return REASON_LABELS[reason ?? ''] ?? String(reason)
+  return i18next.t(`hextech-room-main.reasons.${reason}`, { defaultValue: String(reason) })
 }
 
 /**
@@ -112,27 +99,27 @@ const SKIP_RULES: Readonly<Record<string, { reason: string; park?: string; messa
     PARTY_INVITE_LIMIT: {
       reason: 'invite-limit',
       park: 'long',
-      message: '邀请名额已满（上限 50），无法加入'
+      message: 'invite-limit'
     },
     PARTY_SIZE_LIMIT: {
       reason: 'not-joinable',
       park: 'long',
-      message: '房间人数已满，无法加入'
+      message: 'room-full'
     },
     INVALID_ROLE_TRANSITION: {
       reason: 'not-joinable',
       park: 'long',
-      message: '房间不接受当前加入状态（角色冲突），已暂时跳过；若多个房间均如此，重启客户端后再试'
+      message: 'role-conflict'
     },
     INVALID_GAME_VERSION: {
       reason: 'not-joinable',
       park: 'short',
-      message: '房间与当前客户端的版本不一致，无法加入（INVALID_GAME_VERSION），已暂时跳过'
+      message: 'version-mismatch'
     },
     INVALID_WHILE_PARTY_IN_ACTION: {
       reason: 'not-joinable',
       park: undefined,
-      message: '客户端正忙（上一步操作还没完成），稍后自动重试'
+      message: 'client-busy'
     }
   })
 
@@ -154,7 +141,7 @@ function rejectionCode(error: HextechRoomError) {
  */
 function describeRejection(error: HextechRoomError) {
   const code = error?.detailCode ?? error?.errorCode
-  return code ? `客户端拒绝了这次加入（${code}），已跳过` : describe(error)
+  return code ? i18next.t('hextech-room-main.join-rejected', { code }) : describe(error)
 }
 
 export class SearchController {
@@ -488,7 +475,7 @@ export class SearchController {
           lobby: existing,
           alreadyInRoom: true,
           modeVerified: verdict.modeVerified === true,
-          message: '已在房间内（非本工具加入），不会自动退出',
+          message: i18next.t('hextech-room-main.already-in-room'),
           selectedSummary: summarizeLobby(existing)
         })
       }
@@ -508,7 +495,10 @@ export class SearchController {
           lobby: existing,
           alreadyInRoom: true,
           modeVerified: verdict.modeVerified === true,
-          message: `已在房间内（非本工具加入），人数 ${this._watchPlayerCount} 低于下限 ${floor}，等待房间增长`,
+          message: i18next.t('hextech-room-main.adopted-below-floor', {
+            players: this._watchPlayerCount,
+            floor
+          }),
           selectedSummary: this._watchingSummary
         })
         if (this.stallTimeoutMs === 0) return this._watch(signal, { lobby: existing })
@@ -518,7 +508,7 @@ export class SearchController {
       return this._transition(STATES.idle, {
         type: 'error',
         fatal: true,
-        message: `当前已在其他房间中（${summarizeLobby(existing)}），请先离开该房间再开始搜索。`
+        message: i18next.t('hextech-room-main.other-room', { room: summarizeLobby(existing) })
       })
     }
 
@@ -565,7 +555,7 @@ export class SearchController {
     // Tearing a party down is the client's work, and it can take seconds when invitations are pending or
     // the client is busy. Saying so up front keeps the UI from showing "已停止" and then nothing at all
     // until the client finally answers.
-    this._emit({ type: 'leaving', message: '正在通知客户端退出房间…' })
+    this._emit({ type: 'leaving', message: i18next.t('hextech-room-main.leaving') })
     const startedAt = this.clock()
     try {
       await this.provider.leaveLobby({})
@@ -733,7 +723,7 @@ export class SearchController {
         this._selected = undefined
         this._emit({
           type: 'cooldown-wait',
-          message: '匹配房间均在冷却；持续刷新列表，新房间立即尝试'
+          message: i18next.t('hextech-room-main.cooldown-wait')
         })
         return this._schedule(
           signal,
@@ -746,7 +736,7 @@ export class SearchController {
           )
         : unparked
       if (backingOff && available.length === 0) {
-        this._emit({ type: 'searching', message: '持续刷新列表，失败候选按退避重试' })
+        this._emit({ type: 'searching', message: i18next.t('hextech-room-main.refreshing') })
         return this._schedule(signal, Math.min(this.intervalMs, this._retryAt - this.clock()))
       }
       if (ranked.length === 0) {
@@ -792,7 +782,7 @@ export class SearchController {
           type: 'joining',
           lobby: candidate.lobby,
           reason: candidate.result.reason,
-          message: '尝试加入',
+          message: i18next.t('hextech-room-main.joining'),
           selectedSummary: summarizeLobby(candidate.lobby)
         })
         try {
@@ -822,7 +812,9 @@ export class SearchController {
               type: 'skipped',
               lobby: candidate.lobby,
               reason: rule?.reason ?? 'not-joinable',
-              message: rule?.message ?? describeRejection(error),
+              message: rule
+                ? i18next.t(`hextech-room-main.${rule.message}`)
+                : describeRejection(error),
               selectedSummary: summarizeLobby(candidate.lobby)
             })
             continue
@@ -833,7 +825,7 @@ export class SearchController {
         this._transition(STATES.verifying, {
           type: 'verifying',
           lobby: candidate.lobby,
-          message: '已进入房间，核对模式与邀请额度'
+          message: i18next.t('hextech-room-main.verifying')
         })
         const current = await this.provider.currentLobby({ signal })
         if (this._stale(signal)) return
@@ -866,8 +858,11 @@ export class SearchController {
             // Saying "waiting for the room to grow" up front is what separates a deliberate wait from
             // the tool looking stuck on a half-empty room.
             message: this._belowFloor
-              ? `人数 ${this._watchPlayerCount} 低于下限 ${Number(this.policy.minPlayers) || 0}，等待房间增长`
-              : '已在房间内，持续确认人数变化',
+              ? i18next.t('hextech-room-main.below-floor', {
+                  players: this._watchPlayerCount,
+                  floor: Number(this.policy.minPlayers) || 0
+                })
+              : i18next.t('hextech-room-main.watching'),
             selectedSummary: summary
           })
           return this._scheduleWatch(signal)
@@ -903,8 +898,13 @@ export class SearchController {
           type: immediateFloor ? 'left-stalled-room' : 'rejected-after-join',
           lobby: current ?? candidate.lobby,
           message: immediateFloor
-            ? `人数 ${current?.playerCount} 低于下限 ${Number(this.policy.minPlayers) || 0}，按设置不等待，已退出`
-            : `${describeReason(verification.reason)}，已退出`,
+            ? i18next.t('hextech-room-main.left-below-floor', {
+                players: current?.playerCount,
+                floor: Number(this.policy.minPlayers) || 0
+              })
+            : i18next.t('hextech-room-main.left-rejected', {
+                reason: describeReason(verification.reason)
+              }),
           reason: verification.reason,
           modeVerified: verification.modeVerified
         })
@@ -998,7 +998,7 @@ export class SearchController {
       this._selected = undefined
       return this._transition(STATES.idle, {
         type: 'room-gone',
-        message: '已不在该房间中（对局可能已开始）'
+        message: i18next.t('hextech-room-main.room-gone')
       })
     }
     const playerCount = Number(current?.playerCount) || 0
@@ -1010,7 +1010,7 @@ export class SearchController {
     if (!this._adoptedRoom && isInviteBudgetExhausted(current, this.policy)) {
       return this._abandonRoom(signal, current, {
         type: 'left-stale-room',
-        message: `邀请已达上限，人数仍为 ${playerCount}，已退出`
+        message: i18next.t('hextech-room-main.left-invite-limit', { players: playerCount })
       })
     }
     // Judged on the count just read, not on the high-water mark: a room that peaked at the floor and
@@ -1035,7 +1035,10 @@ export class SearchController {
           return this._transition(STATES.idle, {
             type: 'left-stalled-room',
             lobby: current,
-            message: `人数 ${playerCount} 未达下限 ${floor}，本工具不会退出你自己所在的房间，请手动离开后重新开始`,
+            message: i18next.t('hextech-room-main.adopted-stalled', {
+              players: playerCount,
+              floor
+            }),
             selectedSummary: summarizeLobby(current)
           })
         }
@@ -1043,8 +1046,12 @@ export class SearchController {
           type: 'left-stalled-room',
           message:
             this.stallTimeoutMs === 0
-              ? `人数 ${playerCount} 低于下限 ${floor}，按设置不等待，已退出`
-              : `人数 ${playerCount} 停滞 ${Math.round(this.stallTimeoutMs / 1000)}s 未达下限 ${floor}，已退出`
+              ? i18next.t('hextech-room-main.left-below-floor', { players: playerCount, floor })
+              : i18next.t('hextech-room-main.left-stalled', {
+                  players: playerCount,
+                  floor,
+                  seconds: Math.round(this.stallTimeoutMs / 1000)
+                })
         })
       }
     }
@@ -1057,8 +1064,11 @@ export class SearchController {
         type: 'watching',
         lobby: current,
         message: this._belowFloor
-          ? `人数 ${playerCount} 仍低于下限 ${Number(this.policy.minPlayers) || 0}，继续等待`
-          : '房间人数有变化',
+          ? i18next.t('hextech-room-main.still-below-floor', {
+              players: playerCount,
+              floor: Number(this.policy.minPlayers) || 0
+            })
+          : i18next.t('hextech-room-main.population-changed'),
         selectedSummary: summary
       })
     }
@@ -1137,7 +1147,9 @@ export class SearchController {
     this._versionMismatchWarned = true
     this._emit({
       type: 'warning',
-      message: `当前客户端版本与房间不一致：已有 ${this._versionMismatchRooms.size} 个房间因此拒绝加入`
+      message: i18next.t('hextech-room-main.version-warning', {
+        count: this._versionMismatchRooms.size
+      })
     })
   }
 
@@ -1220,11 +1232,14 @@ export class SearchController {
     lobby: HextechLobby | undefined,
     expectedId: string
   ): { ok: boolean; reason?: string; modeVerified?: boolean } {
-    if (!lobby) return { ok: false, reason: '加入后未读取到当前房间' }
+    if (!lobby) return { ok: false, reason: i18next.t('hextech-room-main.room-missing') }
     if (String(lobby.id) !== String(expectedId)) {
       return {
         ok: false,
-        reason: `当前房间与目标不一致（${String(lobby.id)} ≠ ${String(expectedId)}）`
+        reason: i18next.t('hextech-room-main.room-mismatch', {
+          actual: String(lobby.id),
+          expected: String(expectedId)
+        })
       }
     }
     const result = evaluateJoinedLobby(lobby, this.policy)
