@@ -184,6 +184,11 @@ const menu = computed(() => {
       isDisabled: !lcs.isConnected
     },
     {
+      key: 'hextech-room',
+      icon: renderIcon(Games24FilledIcon),
+      name: t('hextechRoom.title')
+    },
+    {
       key: 'automation',
       icon: renderIcon(Flash20FilledIcon),
       name: t('navigation.sidebar.menu.automation')

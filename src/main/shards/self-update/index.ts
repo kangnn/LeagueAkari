@@ -139,7 +139,7 @@ export class SelfUpdateMain implements IAkariShardInitDispose {
     this._ipcHandlers.register()
 
     if (!shouldRunSelfUpdateLifecycle()) {
-      this._logger.info('Self-update is available only on Windows x64; disabled on', {
+      this._logger.info('Official self-update disabled by distribution or platform', {
         platform: process.platform,
         arch: process.arch
       })

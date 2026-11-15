@@ -1,0 +1,20 @@
+hextechAugment:
+  title: 游戏内海克斯评分
+  enabled: 自动识别三个选项并显示评级
+  description: 仅在海克斯对局中识别前台游戏窗口；低置信度不显示评分，重掷后重新识别
+  noData: 暂无评分
+  noSource: 数据未就绪
+  versionUnknown: 版本未知
+  performance: '表现 {{value}}'
+  source: '来源：{{source}} · 版本：{{patch}} · 获取时间：{{time}}'
+  latency: '最近识别耗时：{{milliseconds}} 毫秒'
+  diagnostics: '捕获 {{time}} · {{milliseconds}} 毫秒 · 文字 {{words}} · 字典 {{names}} · 选项 {{cards}}/3'
+  statuses:
+    background: 游戏不在前台，暂停捕获
+    waiting: 等待海克斯对局及当前英雄
+    starting: 正在启动本地识别
+    scanning: 检测三个海克斯选项中
+    cards: 已识别三个选项
+    unrecognized: 选项暂未识别
+    error: 识别不可用
+    disabled: 已关闭

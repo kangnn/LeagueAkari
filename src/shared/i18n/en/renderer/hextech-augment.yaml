@@ -1,0 +1,20 @@
+hextechAugment:
+  title: In-game augment ratings
+  enabled: Recognize and rate the three offered augments
+  description: Recognizes the foreground game window during Mayhem matches. Uncertain matches receive no rating; rerolls are recognized again.
+  noData: No rating
+  noSource: Data unavailable
+  versionUnknown: Version unknown
+  performance: 'Performance {{value}}'
+  source: 'Source: {{source}} · Version: {{patch}} · Retrieved: {{time}}'
+  latency: 'Latest recognition: {{milliseconds}} ms'
+  diagnostics: 'Captured {{time}} · {{milliseconds}} ms · {{words}} words · {{names}} names · {{cards}}/3 cards'
+  statuses:
+    background: Game is in the background; capture paused
+    waiting: Waiting for a Mayhem match and current champion
+    starting: Starting local recognition
+    scanning: Looking for three augment cards
+    cards: Three cards recognized
+    unrecognized: Cards not recognized
+    error: Recognition unavailable
+    disabled: Disabled

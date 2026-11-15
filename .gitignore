@@ -1,5 +1,6 @@
 node_modules
 dist
+dist-*
 out
 storybook-static
 bench-results/

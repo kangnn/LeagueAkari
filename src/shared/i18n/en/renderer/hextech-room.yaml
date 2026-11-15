@@ -1,0 +1,42 @@
+hextechRoom:
+  title: Hextech rooms
+  connected: Client connected
+  disconnected: Client disconnected
+  search: Room search
+  start: Start search
+  stop: Stop
+  leave: Leave room
+  continue: Leave and keep searching
+  settings: Search settings
+  keywords: Room keywords
+  keywordsHelp: Separate with commas; any keyword matches. Leave blank for all public rooms.
+  minPlayers: Minimum players after joining
+  pollInterval: Browser refresh interval (ms)
+  stallTimeout: Wait for population growth (ms)
+  stallHelp: Zero leaves small rooms immediately. Only automatically leaves rooms joined by this tool.
+  maxInvites: Invitation record limit
+  save: Apply settings
+  logs: Recent events
+  noLogs: No search events yet
+  unavailable: Connect the client and return to an idle lobby to search
+  matched_one: '{{count}} matching room'
+  matched_other: '{{count}} matching rooms'
+  cooling_one: '{{count}} cooling room'
+  cooling_other: '{{count}} cooling rooms'
+  lastRefresh: 'Last refresh: {{time}}'
+  floorWait: 'Waiting for population growth; stall check in about {{seconds}}s'
+  retryWait: 'Earliest room retry in {{seconds}}s'
+  sweepFinished_one: 'Tried {{count}} room; retry in {{seconds}}s while watching for new rooms'
+  sweepFinished_other: 'Tried {{count}} rooms; retry in {{seconds}}s while watching for new rooms'
+  noMatch_one: 'Read {{count}} room; no matches'
+  noMatch_other: 'Read {{count}} rooms; no matches'
+  stopped: Search stopped
+  saved: Settings applied
+  left: Left room
+  phases:
+    idle: Idle
+    connecting: Checking current room
+    searching: Searching
+    joining: Joining
+    verifying: Verifying room
+    joined: In room

@@ -9,11 +9,11 @@ import {
 } from './platform'
 
 describe('self-update platform guards', () => {
-  test('allows download, apply, lifecycle, and updater uninstall only on Windows x64', () => {
-    expect(shouldDownloadUpdateArchive('win32', 'x64')).toBe(true)
-    expect(shouldApplyDownloadedUpdate('win32', 'x64')).toBe(true)
-    expect(shouldRunSelfUpdateLifecycle('win32', 'x64')).toBe(true)
-    expect(shouldUninstallWithUpdater('win32', 'x64')).toBe(true)
+  test('prevents the fork from downloading or applying official binaries on every platform', () => {
+    expect(shouldDownloadUpdateArchive('win32', 'x64')).toBe(false)
+    expect(shouldApplyDownloadedUpdate('win32', 'x64')).toBe(false)
+    expect(shouldRunSelfUpdateLifecycle('win32', 'x64')).toBe(false)
+    expect(shouldUninstallWithUpdater('win32', 'x64')).toBe(false)
 
     expect(shouldDownloadUpdateArchive('win32', 'arm64')).toBe(false)
     expect(shouldApplyDownloadedUpdate('darwin', 'x64')).toBe(false)
@@ -26,8 +26,8 @@ describe('self-update platform guards', () => {
     expect(shouldUninstallWithUpdater('linux', 'x64')).toBe(false)
   })
 
-  test('launches the updater on quit only from a packaged Windows x64 build', () => {
-    expect(shouldLaunchUpdaterOnQuit(true, 'win32', 'x64')).toBe(true)
+  test('never launches the official updater on quit from the fork', () => {
+    expect(shouldLaunchUpdaterOnQuit(true, 'win32', 'x64')).toBe(false)
     expect(shouldLaunchUpdaterOnQuit(false, 'win32', 'x64')).toBe(false)
     expect(shouldLaunchUpdaterOnQuit(true, 'win32', 'arm64')).toBe(false)
     expect(shouldLaunchUpdaterOnQuit(true, 'darwin', 'x64')).toBe(false)
