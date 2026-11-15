@@ -2,7 +2,7 @@ hextechAugment:
   title: In-game augment ratings
   enabled: Recognize and rate the three offered augments
   description: Recognizes the foreground game window during Mayhem matches. Uncertain matches receive no rating; rerolls are recognized again.
-  displayHelp: Ratings appear above the three card names. If they are not visible in fullscreen mode, try Borderless in the game's video settings.
+  displayHelp: Ratings appear in the blank lower area of each card. If they are not visible in fullscreen mode, try Borderless in the game's video settings.
   noData: No rating
   noSource: Data unavailable
   versionUnknown: Version unknown

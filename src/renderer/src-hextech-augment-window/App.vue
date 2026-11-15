@@ -5,20 +5,16 @@
       v-for="(label, slot) in snapshot.labels"
       :key="`${slot}-${label.id}`"
       class="augment-label"
+      :aria-label="label.name"
       :style="position(label)"
     >
-      <div class="augment-name">{{ label.name }}</div>
-      <div class="augment-rating">
-        <span class="augment-tier" :data-tier="label.tier">{{ label.tier ?? '—' }}</span
-        ><span>{{
+      <div class="augment-tier" :data-tier="label.tier">{{ label.tier ?? '—' }}</div>
+      <div class="augment-performance">
+        {{
           label.performance === null
             ? t('hextechAugment.noData')
             : t('hextechAugment.performance', { value: label.performance })
-        }}</span>
-      </div>
-      <div class="augment-source">
-        {{ snapshot.source ?? t('hextechAugment.noSource') }} ·
-        {{ snapshot.patch ?? t('hextechAugment.versionUnknown') }}
+        }}
       </div>
     </div>
   </div>
@@ -49,7 +45,9 @@ function position(label: HextechAugmentLabel) {
   if (!snapshot.value) return {}
   return {
     left: `${(100 * (label.x + label.width / 2)) / snapshot.value.window.width}%`,
-    top: `${(100 * label.y) / snapshot.value.window.height}%`
+    // The picker scales with the client height. Its lower blank area is below
+    // the title and description, and above the card's bottom edge/reroll button.
+    top: `${(100 * (label.y + label.height)) / snapshot.value.window.height + 18}%`
   }
 }
 </script>
@@ -74,48 +72,49 @@ body,
 }
 .augment-label {
   position: absolute;
-  transform: translate(-50%, -115%);
-  min-width: 150px;
-  max-width: 240px;
-  padding: 7px 12px;
-  border: 1px solid rgb(255 255 255 / 25%);
-  border-radius: 8px;
-  background: rgb(13 17 27 / 90%);
-  box-shadow: 0 2px 12px rgb(0 0 0 / 35%);
+  transform: translate(-50%, -50%);
+  width: clamp(110px, 14vw, 340px);
+  padding: 0;
+  background: radial-gradient(ellipse, rgb(8 15 20 / 80%), transparent 72%);
+  text-shadow: 0 2px 4px #000;
   text-align: center;
 }
-.augment-name {
-  font-size: 12px;
-  line-height: 18px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.augment-performance {
+  margin-top: 0.6vh;
+  font-size: clamp(12px, 1.6vh, 34px);
+  line-height: 1.4;
+  font-weight: 600;
   white-space: nowrap;
 }
-.augment-rating {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-size: 12px;
-}
 .augment-tier {
-  font-size: 28px;
+  font-size: clamp(30px, 4.5vh, 96px);
   font-weight: 800;
-  line-height: 34px;
+  line-height: 1;
   color: #c7cbd4;
 }
+.augment-tier::before,
+.augment-tier::after {
+  display: inline-block;
+  margin: 0 0.4em;
+  font-size: 0.55em;
+  vertical-align: 0.12em;
+}
+.augment-tier::before {
+  content: '«';
+}
+.augment-tier::after {
+  content: '»';
+}
 .augment-tier[data-tier='S'] {
-  color: #d7b4ff;
+  color: #ffdb79;
 }
 .augment-tier[data-tier='A'] {
-  color: #90c5ff;
+  color: #ff655e;
 }
 .augment-tier[data-tier='B'] {
-  color: #83e4b5;
+  color: #63d9ff;
 }
-.augment-source {
-  font-size: 10px;
-  line-height: 16px;
-  opacity: 0.65;
+.augment-tier[data-tier='C'] {
+  color: #83e4b5;
 }
 </style>
