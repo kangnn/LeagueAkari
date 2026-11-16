@@ -1,15 +1,9 @@
 hextechAugment:
-  title: In-game augment ratings
-  enabled: Recognize and rate the three offered augments
-  description: Recognizes the foreground game window during Mayhem matches. Uncertain matches receive no rating; rerolls are recognized again.
-  displayHelp: Ratings appear in the blank lower area of each card. If they are not visible in fullscreen mode, try Borderless in the game's video settings.
+  showRatings: Show augment ratings
+  helpLabel: About augment ratings
+  displayHelp: Choose Borderless or Windowed in the game video settings. When enabled, the three offers are recognized automatically and ratings for your champion appear below each card. Exclusive fullscreen may hide the overlay. You can turn this off at any time.
   noData: No rating
-  noSource: Data unavailable
-  versionUnknown: Version unknown
   performance: 'Performance {{value}}'
-  source: 'Source: {{source}} · Version: {{patch}} · Retrieved: {{time}}'
-  latency: 'Latest recognition: {{milliseconds}} ms'
-  diagnostics: 'Captured {{time}} · {{milliseconds}} ms · {{words}} words · {{names}} names · {{cards}}/3 cards'
   statuses:
     background: Game is in the background; capture paused
     waiting: Waiting for a Mayhem match and current champion

@@ -1,7 +1,5 @@
 hextechRoom:
   title: 海克斯搜房
-  connected: 客户端已连接
-  disconnected: 客户端未连接
   search: 房间搜索
   start: 开始搜索
   stop: 停止

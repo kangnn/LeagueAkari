@@ -4,9 +4,6 @@
       <div class="mx-auto flex max-w-240 flex-col gap-6 p-6">
         <div class="flex items-center justify-between gap-3">
           <div class="text-xl font-bold">{{ t('hextechRoom.title') }}</div>
-          <NTag :type="leagueClient.isConnected ? 'success' : 'default'" size="small">
-            {{ t(leagueClient.isConnected ? 'hextechRoom.connected' : 'hextechRoom.disconnected') }}
-          </NTag>
         </div>
         <SettingsSection :title="t('hextechRoom.search')">
           <div class="flex flex-col gap-3 p-3">
@@ -62,44 +59,6 @@
               t('hextechRoom.retryWait', { seconds: secondsUntil(store.status.nextRoomRetryAt) })
             }}</NText>
             <NText v-if="!canSearch" depth="3">{{ t('hextechRoom.unavailable') }}</NText>
-          </div>
-        </SettingsSection>
-        <SettingsSection :title="t('hextechAugment.title')">
-          <SettingsRow
-            :label="t('hextechAugment.enabled')"
-            :label-description="t('hextechAugment.description')"
-          >
-            <NSwitch :value="augmentStore.settings.enabled" @update:value="setAugmentEnabled" />
-          </SettingsRow>
-          <div class="flex flex-col gap-2 p-3 text-sm">
-            <NAlert v-if="augmentStore.settings.enabled" type="info" :show-icon="false">
-              {{ t('hextechAugment.displayHelp') }}
-            </NAlert>
-            <NText depth="3">{{ t(`hextechAugment.statuses.${augmentStore.status}`) }}</NText>
-            <NAlert v-if="augmentStore.error" type="warning" :show-icon="false">{{
-              augmentStore.error
-            }}</NAlert>
-            <NText v-if="augmentStore.diagnostics" depth="3">{{
-              t('hextechAugment.diagnostics', {
-                time: formatTime(augmentStore.diagnostics.capturedAt),
-                milliseconds: augmentStore.diagnostics.elapsedMs,
-                words: augmentStore.diagnostics.wordCount,
-                names: augmentStore.diagnostics.dictionarySize,
-                cards: augmentStore.diagnostics.matchedCards
-              })
-            }}</NText>
-            <template v-if="augmentStore.snapshot">
-              <NText depth="3">{{
-                t('hextechAugment.latency', { milliseconds: augmentStore.snapshot.recognitionMs })
-              }}</NText>
-              <NText depth="3">{{
-                t('hextechAugment.source', {
-                  source: augmentStore.snapshot.source ?? '—',
-                  patch: augmentStore.snapshot.patch ?? t('hextechAugment.versionUnknown'),
-                  time: formatTime(augmentStore.snapshot.fetchedAt ?? undefined)
-                })
-              }}</NText>
-            </template>
           </div>
         </SettingsSection>
         <SettingsSection :title="t('hextechRoom.settings')">
@@ -179,33 +138,19 @@
 import SettingsRow from '@renderer-shared/components/SettingsRow.vue'
 import SettingsSection from '@renderer-shared/components/SettingsSection.vue'
 import { useInstance } from '@renderer-shared/shards'
-import { HextechAugmentRenderer } from '@renderer-shared/shards/hextech-augment'
-import { useHextechAugmentStore } from '@renderer-shared/shards/hextech-augment/store'
 import { HextechRoomRenderer } from '@renderer-shared/shards/hextech-room'
 import { useHextechRoomStore } from '@renderer-shared/shards/hextech-room/store'
 import { useLeagueClientStore } from '@renderer-shared/shards/league-client/store'
 import type { HextechRoomLog } from '@shared/types/hextech-room'
 import { useNow } from '@vueuse/core'
 import { useTranslation } from 'i18next-vue'
-import {
-  NAlert,
-  NButton,
-  NEmpty,
-  NInput,
-  NInputNumber,
-  NScrollbar,
-  NSwitch,
-  NTag,
-  NText
-} from 'naive-ui'
+import { NAlert, NButton, NEmpty, NInput, NInputNumber, NScrollbar, NTag, NText } from 'naive-ui'
 import { computed, reactive, ref, watch } from 'vue'
 
 const { t } = useTranslation()
 const store = useHextechRoomStore()
 const leagueClient = useLeagueClientStore()
 const room = useInstance(HextechRoomRenderer)
-const augment = useInstance(HextechAugmentRenderer)
-const augmentStore = useHextechAugmentStore()
 const draft = reactive({ ...store.settings.configuration })
 const keywords = ref(draft.nameKeywords.join(', '))
 const error = ref('')
@@ -234,14 +179,6 @@ async function command(action: 'start' | 'stop' | 'leave' | 'continue') {
   error.value = ''
   try {
     await room.command(action)
-  } catch (caught) {
-    error.value = String(caught)
-  }
-}
-
-async function setAugmentEnabled(enabled: boolean) {
-  try {
-    await augment.setEnabled(enabled)
   } catch (caught) {
     error.value = String(caught)
   }

@@ -1,7 +1,5 @@
 hextechRoom:
   title: Hextech rooms
-  connected: Client connected
-  disconnected: Client disconnected
   search: Room search
   start: Start search
   stop: Stop

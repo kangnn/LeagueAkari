@@ -5,7 +5,7 @@ import type {
 import { makeAutoObservable, observableRef } from 'mobx'
 
 export class HextechAugmentSettings {
-  enabled = true
+  enabled = false
   constructor() {
     makeAutoObservable(this)
   }

@@ -12,6 +12,7 @@ import { HextechAugmentSettings, HextechAugmentState } from './state'
 
 const worker = vi.hoisted(() => ({
   send: null as null | ((message: RecognitionWorkerMessage) => void),
+  start: vi.fn(),
   capture: vi.fn(),
   stop: vi.fn()
 }))
@@ -20,7 +21,9 @@ vi.mock('./recognition-worker-controller', () => ({
     constructor(send: (message: RecognitionWorkerMessage) => void) {
       worker.send = send
     }
-    start() {}
+    start() {
+      worker.start()
+    }
     capture(focused = false, regions: unknown[] = []) {
       worker.capture(focused, regions)
     }
@@ -127,7 +130,7 @@ describe.skipIf(process.platform !== 'win32')('augment overlay state and async f
     vi.clearAllMocks()
   })
 
-  function setup(loadDetails = vi.fn().mockResolvedValue(ratings())) {
+  function setup(loadDetails = vi.fn().mockResolvedValue(ratings()), enabled = true) {
     const league = observable({
       state: { connectionState: 'connected' },
       data: {
@@ -158,6 +161,7 @@ describe.skipIf(process.platform !== 'win32')('augment overlay state and async f
     }
     const window = { present: vi.fn(), close: vi.fn() }
     const settings = new HextechAugmentSettings()
+    settings.enabled = enabled
     const state = new HextechAugmentState()
     const controller = new HextechAugmentOverlayController(
       league as unknown as Dependencies[0],
@@ -171,6 +175,27 @@ describe.skipIf(process.platform !== 'win32')('augment overlay state and async f
     controller.watch()
     return { controller, league, settings, state, window, loadDetails }
   }
+
+  it('waits for opt-in and stops recognition immediately when disabled', async () => {
+    const { settings, state, loadDetails, window } = setup(undefined, false)
+    await vi.advanceTimersByTimeAsync(1400)
+    expect(worker.start).not.toHaveBeenCalled()
+    expect(worker.capture).not.toHaveBeenCalled()
+    expect(loadDetails).not.toHaveBeenCalled()
+    runInAction(() => {
+      settings.enabled = true
+    })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(worker.start).toHaveBeenCalledOnce()
+    worker.send!(frame())
+    expect(state.snapshot?.labels).toHaveLength(3)
+    runInAction(() => {
+      settings.enabled = false
+    })
+    expect(state.snapshot).toBeNull()
+    expect(state.status).toBe('disabled')
+    expect(window.present).toHaveBeenLastCalledWith(null)
+  })
 
   it('shows champion-specific raw grades and leaves an unavailable patch unknown', async () => {
     const { state, loadDetails } = setup()

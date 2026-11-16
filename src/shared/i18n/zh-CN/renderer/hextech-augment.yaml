@@ -1,15 +1,9 @@
 hextechAugment:
-  title: 游戏内海克斯评分
-  enabled: 自动识别三个选项并显示评级
-  description: 仅在海克斯对局中识别前台游戏窗口；低置信度不显示评分，重掷后重新识别
-  displayHelp: 评分位于三张卡片下半部的空白处。若全屏下看不到，请在游戏的视频设置中切换为“无边框”。
+  showRatings: 显示评分
+  helpLabel: 海克斯评分使用说明
+  displayHelp: 请在游戏的视频设置中选择“无边框”或“窗口化”。开启后会自动识别三选一选项，并在卡片下方显示当前英雄的评分。独占全屏下可能无法显示，可随时关闭。
   noData: 暂无评分
-  noSource: 数据未就绪
-  versionUnknown: 版本未知
   performance: '表现 {{value}}'
-  source: '来源：{{source}} · 版本：{{patch}} · 获取时间：{{time}}'
-  latency: '最近识别耗时：{{milliseconds}} 毫秒'
-  diagnostics: '捕获 {{time}} · {{milliseconds}} 毫秒 · 文字 {{words}} · 字典 {{names}} · 选项 {{cards}}/3'
   statuses:
     background: 游戏不在前台，暂停捕获
     waiting: 等待海克斯对局及当前英雄

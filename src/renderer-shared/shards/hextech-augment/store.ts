@@ -6,7 +6,7 @@ import { defineStore } from 'pinia'
 import { shallowReactive, shallowRef } from 'vue'
 
 export const useHextechAugmentStore = defineStore('shard:hextech-augment-renderer', () => {
-  const settings = shallowReactive({ enabled: true })
+  const settings = shallowReactive({ enabled: false })
   const snapshot = shallowRef<HextechAugmentSnapshot | null>(null)
   const diagnostics = shallowRef<HextechAugmentDiagnostics | null>(null)
   const status = shallowRef('waiting')

@@ -11,7 +11,6 @@ import { ClientInstallationRenderer } from '@renderer-shared/shards/client-insta
 import { ExtraAssetsRenderer } from '@renderer-shared/shards/extra-assets'
 import { FeatureGatingRenderer } from '@renderer-shared/shards/feature-gating'
 import { GameClientRenderer } from '@renderer-shared/shards/game-client'
-import { HextechAugmentRenderer } from '@renderer-shared/shards/hextech-augment'
 import { HextechRoomRenderer } from '@renderer-shared/shards/hextech-room'
 import { InGameSendRenderer } from '@renderer-shared/shards/in-game-send'
 import { AkariIpcRenderer } from '@renderer-shared/shards/ipc'
@@ -53,7 +52,6 @@ manager.use(AutoMiscRenderer)
 manager.use(ClientInstallationRenderer)
 manager.use(ExtraAssetsRenderer)
 manager.use(FeatureGatingRenderer)
-manager.use(HextechAugmentRenderer)
 manager.use(HextechRoomRenderer)
 manager.use(GameClientRenderer)
 manager.use(InGameSendRenderer)

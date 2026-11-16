@@ -29,7 +29,7 @@ export class HextechAugmentMain implements IAkariShardInitDispose {
   ) {
     this._settingService = _settingFactory.register(
       HextechAugmentMain.id,
-      { enabled: { default: true, schema: z.boolean() } },
+      { enabled: { default: this.settings.enabled, schema: z.boolean() } },
       this.settings
     )
     this._controller = new HextechAugmentOverlayController(

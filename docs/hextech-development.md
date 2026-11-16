@@ -108,3 +108,13 @@ The attempted old-version comparison encountered an AFK modal and cannot support
 | Upstream maintenance                                       | Fetch/merge/review/check steps are documented; no automatic merge or scheduled synchronization is configured.                                                                                                                                                                                                                                                                                                       |
 
 Overall real-game acceptance is still open. The remaining input/display/offer-change latency checks must not be inferred from a green unit suite or a visible Electron window flag.
+
+## Feature separation and Mini control
+
+The rating switch now belongs to the existing Mini window. It is visible only on Windows with a connected Mayhem session, and is hidden for spectating. The same control remains accessible during champion select and a running game. It defaults off for a new profile, persists explicit choices through the existing settings service, and explains Borderless/Windowed rendering through a question-mark popover. Disabling clears the snapshot and stops the recognition worker immediately. Existing explicit saved preferences are retained.
+
+The room-search page no longer owns rating settings or duplicates the global connection indicator. Its sidebar uses a people-search icon distinct from the ongoing-game icon. Both features reuse the existing LeagueClientMain authenticated HTTP client and event subscriptions. They create no additional LCU connection, credential discovery, or WebSocket.
+
+Development is split into two independent branches from the original upstream dev baseline. `feat/mayhem-augment-ratings` contains only ratings, the Mini control and necessary build/shard/type wiring. `feat/hextech-room-search` contains only room search. Neither includes the distribution identity, isolated profile, updater overrides, or the other feature. `hextech-integration` remains the combined local distribution. No upstream pull request is opened by this separation.
+
+Validation uses full production type checking and builds, 625 Vitest tests, and an actual browser rendering of the production Mini control with isolated Pinia/IPC fixtures. UI checks cover Mayhem/non-Mayhem visibility, disconnection, spectating, enabling/disabling, English/Chinese labels and narrow-window layout. This fixture does not substitute for real-game reroll/selection acceptance, which remains pending.
