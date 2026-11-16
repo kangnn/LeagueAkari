@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 import Automation from '@main-window/views/automation/Automation.vue'
+import HextechRoom from '@main-window/views/hextech-room/HextechRoom.vue'
 import OngoingGame from '@main-window/views/ongoing-game/OngoingGame.vue'
 import PlayerTabs from '@main-window/views/player-tabs/PlayerTabs.vue'
 import Test from '@main-window/views/test/Test.vue'
@@ -25,6 +26,7 @@ const router = createRouter({
       path: '/ongoing-game',
       component: OngoingGame
     },
+    { name: 'hextech-room', path: '/hextech-room', component: HextechRoom },
     {
       name: 'toolkit',
       path: '/toolkit/:section?',

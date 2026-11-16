@@ -190,3 +190,54 @@ in-game-send-main:
       blueTeamEmpty: No blue premades
       redTeamEmpty: No red premades
       empty: No premade groups
+hextech-room-main:
+  invite-limit: Cannot join; invitation capacity is full (limit 50)
+  room-full: Cannot join; the room is full
+  role-conflict: The room rejected the current role transition and was skipped. If several rooms do this, restart the client and retry.
+  version-mismatch: The room and client versions differ (INVALID_GAME_VERSION); skipped temporarily
+  client-busy: The client is still processing the previous operation; retrying shortly
+  join-rejected: 'The client rejected the join ({{code}}); skipped'
+  already-in-room: Already in a room joined manually; it will not be left automatically
+  adopted-below-floor: 'Already in a manually joined room. Population is {{players}}, below the minimum of {{floor}}; waiting for growth.'
+  other-room: 'Already in another room ({{room}}). Leave it before searching.'
+  leaving: Asking the client to leave the room…
+  cooldown-wait: Matching rooms are cooling down; watching for new rooms to try immediately
+  refreshing: Refreshing the list; failed candidates are retried with backoff
+  joining: Trying to join
+  verifying: Joined; checking the mode and invitation capacity
+  below-floor: 'Room population is {{players}}, below the minimum of {{floor}}; waiting for growth'
+  watching: In the room; watching population changes
+  left-below-floor: 'Room population is {{players}}, below the minimum of {{floor}}; left without waiting as configured'
+  left-rejected: '{{reason}}; left the room'
+  room-gone: No longer in the room; the game may have started
+  left-invite-limit: 'Invitation capacity exhausted; room population is {{players}}. Left the room.'
+  adopted-stalled: 'Room population is {{players}}, below the minimum of {{floor}}. The tool will not leave your manually joined room; leave it yourself before restarting.'
+  left-stalled: 'Population stayed at {{players}} for {{seconds}}s, below the minimum {{floor}}; left the room'
+  still-below-floor: 'Room population is still {{players}}, below the minimum of {{floor}}; continuing to wait'
+  population-changed: Room population changed
+  version-warning_one: 'Client version mismatch: {{count}} room rejected the join for this reason'
+  version-warning_other: 'Client version mismatch: {{count}} rooms rejected the join for this reason'
+  room-missing: Could not read the current room after joining
+  room-mismatch: 'The current room differs from the target ({{actual}} ≠ {{expected}})'
+  operation-busy: A room operation is already in progress
+  disconnected: League Client is disconnected
+  in-game: Room search is unavailable during a game
+  reasons:
+    not-target-map: Not Howling Abyss
+    not-5v5: Not a 10-player room
+    password-or-unknown: Password required or password status unknown
+    not-joinable: The room is no longer joinable
+    full: The room is full
+    name-mismatch: Room name does not match the keywords
+    too-few-players: Too few players
+    mode-unknown: Cannot confirm the mode
+    not-mayhem-aram: Not ARAM Mayhem
+    invites-exhausted: Invitation capacity exhausted before the room reached the player minimum
+  summary:
+    players: 'Players {{players}}/{{maximum}}'
+    map: 'Map {{map}}'
+    mode: 'Mode {{mode}}'
+    invites: 'Invites {{invites}}'
+    spectators: 'Spectators {{spectators}}/{{maximum}}'
+    room: 'Room {{id}} ({{details}})'
+    separator: ', '

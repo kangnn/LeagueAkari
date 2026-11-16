@@ -58,7 +58,8 @@ import { ToolFilled as ToolFilledIcon } from '@vicons/antd'
 import {
   AnimalRabbit28Filled as AnimalRabbit28FilledIcon,
   Flash20Filled as Flash20FilledIcon,
-  Games24Filled as Games24FilledIcon
+  Games24Filled as Games24FilledIcon,
+  PeopleSearch24Filled as PeopleSearch24FilledIcon
 } from '@vicons/fluent'
 import { AnalyticsRound as AnalyticsRoundIcon } from '@vicons/material'
 import { useTranslation } from 'i18next-vue'
@@ -182,6 +183,11 @@ const menu = computed(() => {
       name: t('navigation.sidebar.menu.ongoing-game'),
       inProgress: shouldShowOngoingGameBadge.value,
       isDisabled: !lcs.isConnected
+    },
+    {
+      key: 'hextech-room',
+      icon: renderIcon(PeopleSearch24FilledIcon),
+      name: t('hextechRoom.title')
     },
     {
       key: 'automation',

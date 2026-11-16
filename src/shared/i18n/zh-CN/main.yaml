@@ -190,3 +190,53 @@ in-game-send-main:
       blueTeamEmpty: 蓝方无开黑
       redTeamEmpty: 红方无开黑
       empty: 无开黑小队
+hextech-room-main:
+  invite-limit: 邀请名额已满（上限 50），无法加入
+  room-full: 房间人数已满，无法加入
+  role-conflict: 房间不接受当前加入状态（角色冲突），已暂时跳过；若多个房间均如此，重启客户端后再试
+  version-mismatch: 房间与当前客户端的版本不一致，无法加入（INVALID_GAME_VERSION），已暂时跳过
+  client-busy: 客户端正忙（上一步操作还没完成），稍后自动重试
+  join-rejected: '客户端拒绝了这次加入（{{code}}），已跳过'
+  already-in-room: 已在房间内（非本工具加入），不会自动退出
+  adopted-below-floor: '已在房间内（非本工具加入），人数 {{players}} 低于下限 {{floor}}，等待房间增长'
+  other-room: '当前已在其他房间中（{{room}}），请先离开该房间再开始搜索。'
+  leaving: 正在通知客户端退出房间…
+  cooldown-wait: 匹配房间均在冷却；持续刷新列表，新房间立即尝试
+  refreshing: 持续刷新列表，失败候选按退避重试
+  joining: 尝试加入
+  verifying: 已进入房间，核对模式与邀请额度
+  below-floor: '人数 {{players}} 低于下限 {{floor}}，等待房间增长'
+  watching: 已在房间内，持续确认人数变化
+  left-below-floor: '人数 {{players}} 低于下限 {{floor}}，按设置不等待，已退出'
+  left-rejected: '{{reason}}，已退出'
+  room-gone: 已不在该房间中（对局可能已开始）
+  left-invite-limit: '邀请已达上限，人数仍为 {{players}}，已退出'
+  adopted-stalled: '人数 {{players}} 未达下限 {{floor}}，本工具不会退出你自己所在的房间，请手动离开后重新开始'
+  left-stalled: '人数 {{players}} 停滞 {{seconds}}s 未达下限 {{floor}}，已退出'
+  still-below-floor: '人数 {{players}} 仍低于下限 {{floor}}，继续等待'
+  population-changed: 房间人数有变化
+  version-warning: '当前客户端版本与房间不一致：已有 {{count}} 个房间因此拒绝加入'
+  room-missing: 加入后未读取到当前房间
+  room-mismatch: '当前房间与目标不一致（{{actual}} ≠ {{expected}}）'
+  operation-busy: 房间操作正在进行中
+  disconnected: 英雄联盟客户端未连接
+  in-game: 对局期间无法搜索房间
+  reasons:
+    not-target-map: 地图不是嚎哭深渊
+    not-5v5: 不是 10 人房间
+    password-or-unknown: 需要密码或密码状态未知
+    not-joinable: 房间已不可加入
+    full: 房间已满
+    name-mismatch: 房间名不含关键词
+    too-few-players: 人数不足
+    mode-unknown: 无法确认模式
+    not-mayhem-aram: 不是海克斯乱斗
+    invites-exhausted: 邀请已达上限且人数仍然不足
+  summary:
+    players: '{{players}}/{{maximum}} 人'
+    map: '地图 {{map}}'
+    mode: '模式 {{mode}}'
+    invites: '邀请 {{invites}}'
+    spectators: '观战 {{spectators}}/{{maximum}}'
+    room: '房间 {{id}}（{{details}}）'
+    separator: '，'

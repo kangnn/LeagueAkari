@@ -1,0 +1,36 @@
+hextechRoom:
+  title: 海克斯搜房
+  search: 房间搜索
+  start: 开始搜索
+  stop: 停止
+  leave: 离开房间
+  continue: 离开并继续搜索
+  settings: 搜索设置
+  keywords: 房间关键词
+  keywordsHelp: 逗号分隔，满足任意一个即可；留空匹配所有公开房间
+  minPlayers: 加入后人数下限
+  pollInterval: 列表刷新间隔（毫秒）
+  stallTimeout: 人数停滞等待（毫秒）
+  stallHelp: 设为 0 时人数不足立即退出；仅自动退出本工具加入的房间
+  maxInvites: 邀请记录上限
+  save: 应用设置
+  logs: 最近事件
+  noLogs: 尚无搜索记录
+  unavailable: 请连接客户端，并在大厅空闲时开始搜索
+  matched: '匹配 {{count}} 个房间'
+  cooling: '冷却 {{count}} 个房间'
+  lastRefresh: '最近刷新：{{time}}'
+  floorWait: '等待房间增长，约 {{seconds}} 秒后复查停滞'
+  retryWait: '最早冷却复查：{{seconds}} 秒后'
+  sweepFinished: '本轮尝试 {{count}} 个房间，{{seconds}} 秒后重试；继续刷新新房间'
+  noMatch: '已读取 {{count}} 个房间，暂无匹配'
+  stopped: 已停止
+  saved: 已应用设置
+  left: 已离开房间
+  phases:
+    idle: 未搜索
+    connecting: 检查当前房间
+    searching: 搜索中
+    joining: 正在加入
+    verifying: 核验房间
+    joined: 已在房间内
