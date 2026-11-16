@@ -4,7 +4,7 @@ This fork adds a sidebar room-search page and local recognition of the three off
 
 ## Isolation
 
-The custom app ID is `kangnn.league-akari-hextech`, executable is `LeagueAkariHextech.exe`, and user data is stored under `LeagueAkariHextech` in Electron's app-data directory. Custom protocol names are `league-akari-hextech` and `league-akari-hextech-dev`. The official binary updater is disabled so it cannot replace the fork with an official build.
+The application keeps the official display name `League Akari` and executable name `LeagueAkari.exe`. The test distribution uses app ID `kangnn.league-akari-hextech` and stores user data under `LeagueAkariHextech` in Electron's app-data directory. Custom protocol names are `league-akari-hextech` and `league-akari-hextech-dev`. The official binary updater is disabled so it cannot replace the fork with an official build.
 
 ## Upstream synchronization
 

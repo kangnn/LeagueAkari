@@ -1,5 +1,5 @@
 appId: kangnn.league-akari-hextech
-productName: League Akari Hextech
+productName: League Akari
 directories:
   buildResources: build
 files:
@@ -46,7 +46,7 @@ asarUnpack:
 win:
   target:
     - 7z
-  executableName: LeagueAkariHextech
+  executableName: LeagueAkari
   icon: resources/LA_ICON.ico
 
 mac:
