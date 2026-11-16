@@ -111,7 +111,7 @@ Overall real-game acceptance is still open. The remaining input/display/offer-ch
 
 ## Feature separation and Mini control
 
-The rating switch now belongs to the existing Mini window. It is visible only on Windows with a connected Mayhem session, and is hidden for spectating. The same control remains accessible during champion select and a running game. It defaults off for a new profile, persists explicit choices through the existing settings service, and explains Borderless/Windowed rendering through a question-mark popover. Disabling clears the snapshot and stops the recognition worker immediately. Existing explicit saved preferences are retained.
+The rating switch is a third row inside the existing Mini lounge operations card, directly below auto-accept and auto-matchmaking. The original Mini frame, artwork, title and operations remain unchanged. No extra settings card is added. It is visible only on Windows with a connected Mayhem session, and is hidden for spectating. It defaults off for a new profile, persists explicit choices through the existing settings service, and explains Borderless/Windowed rendering through a question-mark popover. Disabling clears the snapshot and stops the recognition worker immediately. Existing explicit saved preferences are retained.
 
 The room-search page no longer owns rating settings or duplicates the global connection indicator. Its sidebar uses a people-search icon distinct from the ongoing-game icon. Both features reuse the existing LeagueClientMain authenticated HTTP client and event subscriptions. They create no additional LCU connection, credential discovery, or WebSocket.
 

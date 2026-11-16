@@ -1,7 +1,7 @@
 <template>
   <div v-if="visible">
-    <NCard size="small">
-      <div class="flex min-h-6 items-center gap-1">
+    <NFlex align="center" class="h-6 not-last:mb-0.5">
+      <div class="flex flex-1 items-center gap-1">
         <span class="text-xs text-gray-600 dark:text-gray-400">{{
           t('hextechAugment.showRatings')
         }}</span>
@@ -15,20 +15,19 @@
           </template>
           <div class="max-w-64 text-xs leading-relaxed">{{ t('hextechAugment.displayHelp') }}</div>
         </NPopover>
-        <NSwitch
-          class="ml-auto"
-          size="small"
-          :value="store.settings.enabled"
-          :loading="saving"
-          :disabled="saving"
-          :aria-label="t('hextechAugment.showRatings')"
-          @update:value="setEnabled"
-        />
       </div>
-      <NText v-if="error || store.error" type="error" class="mt-1 block text-xs">
-        {{ error || store.error }}
-      </NText>
-    </NCard>
+      <NSwitch
+        size="small"
+        :value="store.settings.enabled"
+        :loading="saving"
+        :disabled="saving"
+        :aria-label="t('hextechAugment.showRatings')"
+        @update:value="setEnabled"
+      />
+    </NFlex>
+    <NText v-if="error || store.error" type="error" class="mt-1 block text-xs">
+      {{ error || store.error }}
+    </NText>
   </div>
 </template>
 
@@ -38,7 +37,7 @@ import { useAppCommonStore } from '@renderer-shared/shards/app-common/store'
 import { useLeagueClientStore } from '@renderer-shared/shards/league-client/store'
 import { HelpCircleOutline } from '@vicons/ionicons5'
 import { useTranslation } from 'i18next-vue'
-import { NButton, NCard, NIcon, NPopover, NSwitch, NText } from 'naive-ui'
+import { NButton, NFlex, NIcon, NPopover, NSwitch, NText } from 'naive-ui'
 import { computed, ref } from 'vue'
 
 import { HextechAugmentRenderer } from './index'

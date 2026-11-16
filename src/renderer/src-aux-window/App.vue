@@ -5,13 +5,11 @@
     <div class="content">
       <IndicatorView />
     </div>
-    <MayhemAugmentControl class="mx-3 mb-3 shrink-0" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { SetupInAppScope } from '@renderer-shared/shards/setup-in-app-scope/setup-in-app-scope-component'
-import MayhemAugmentControl from '@renderer-shared/shards/hextech-augment/MayhemAugmentControl.vue'
 
 import AuxWindowTitlebar from './components/AuxWindowTitlebar.vue'
 import IndicatorView from './views/Indicator.vue'
