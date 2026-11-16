@@ -1,11 +1,11 @@
 <template>
   <div v-if="visible">
-    <NFlex align="center" class="h-6 not-last:mb-0.5">
-      <div class="flex flex-1 items-center gap-1">
+    <NFlex align="center" class="min-h-6 not-last:mb-0.5">
+      <div class="flex min-w-0 flex-1 items-center gap-1">
         <span class="text-xs text-gray-600 dark:text-gray-400">{{
           t('hextechAugment.showRatings')
         }}</span>
-        <NPopover trigger="hover" :show-arrow="false">
+        <NPopover trigger="hover" :show-arrow="false" class="box-border w-56 max-w-[70vw]">
           <template #trigger>
             <NButton text size="tiny" :aria-label="t('hextechAugment.helpLabel')">
               <template #icon
@@ -13,7 +13,7 @@
               ></template>
             </NButton>
           </template>
-          <div class="max-w-64 text-xs leading-relaxed">{{ t('hextechAugment.displayHelp') }}</div>
+          <div class="text-xs leading-relaxed">{{ t('hextechAugment.displayHelp') }}</div>
         </NPopover>
       </div>
       <NSwitch
