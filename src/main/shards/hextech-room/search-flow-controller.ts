@@ -43,8 +43,10 @@ export class HextechRoomSearchFlowController {
           ] as const,
         ([connection, phase]) => {
           this.search.watchPushConnected = connection === 'connected'
-          if (connection !== 'connected' || (phase && !['None', 'Lobby'].includes(phase)))
+          if (connection !== 'connected' || (phase && !['None', 'Lobby'].includes(phase))) {
+            this._commandGeneration += 1
             this.search.stop()
+          }
         },
         { fireImmediately: true }
       )

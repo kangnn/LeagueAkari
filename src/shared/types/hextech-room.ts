@@ -1,6 +1,5 @@
 export interface HextechLobby {
   id: string
-  browserId?: number
   name?: string
   mapId?: number
   teamSize?: number
@@ -10,7 +9,6 @@ export interface HextechLobby {
   spectatorCount?: number
   playerCount: number
   inviteCount?: number
-  pendingInviteCount?: number
   requiresPassword?: boolean
   joinable: boolean
   joined?: boolean
@@ -18,7 +16,6 @@ export interface HextechLobby {
   gameMode?: string
   gameMutator?: string
   displayName?: string
-  gameType?: string
 }
 
 export interface HextechRoomPolicy {
@@ -73,7 +70,6 @@ export interface HextechRoomStatus {
   watchDeadlineAt?: number
   maxInvites: number
   nameKeywords: string[]
-  diagnostics?: unknown[]
 }
 
 export interface HextechRoomEvent extends Partial<HextechRoomStatus> {
@@ -99,7 +95,6 @@ export interface HextechRoomError extends Error {
   fatal?: boolean
   errorCode?: string
   detailCode?: string
-  attempts?: unknown[]
 }
 
 export function asHextechRoomError(error: unknown): HextechRoomError {

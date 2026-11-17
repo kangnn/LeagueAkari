@@ -140,10 +140,6 @@ export function rankLobbies(lobbies: HextechLobby[], policy: HextechRoomPolicy =
     })
 }
 
-export function selectLobby(lobbies: HextechLobby[], policy: HextechRoomPolicy = DEFAULT_POLICY) {
-  return rankLobbies(lobbies, policy)[0]
-}
-
 export function summarizeLobby(lobby?: HextechLobby) {
   if (!lobby) return undefined
   const parts = [

@@ -73,7 +73,7 @@ class Provider implements HextechLobbyProvider {
   }
 }
 
-describe('migrated room search behavior', () => {
+describe('custom room search behavior', () => {
   const controllers: SearchController[] = []
   beforeEach(() => {
     vi.useFakeTimers()
@@ -185,6 +185,38 @@ describe('migrated room search behavior', () => {
     controller.acceptLobbyPush(provider.room)
     await vi.advanceTimersByTimeAsync(1500)
     expect(provider.left).toBe(0)
+    expect(controller.running).toBe(false)
+  })
+
+  it.each([0, 50])(
+    'stops when the user switches rooms during watching (%s invitations)',
+    async (invites) => {
+      const provider = new Provider()
+      provider.currentPlayers = 8
+      const controller = search(provider, { stallTimeoutMs: 1000 })
+      await controller.start()
+      provider.room = joined('manual-room', 2, invites)
+      controller.acceptLobbyPush(provider.room)
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(provider.left).toBe(0)
+      expect(provider.room?.id).toBe('manual-room')
+      expect(provider.joins).toEqual(['room'])
+      expect(controller.running).toBe(false)
+    }
+  )
+
+  it('preserves a different current room returned during join verification', async () => {
+    const provider = new Provider()
+    provider.joinLobby = async (id) => {
+      provider.joins.push(id)
+      provider.room = joined('manual-room', 2, 50)
+    }
+    const controller = search(provider, { stallTimeoutMs: 0 })
+    await controller.start()
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(provider.left).toBe(0)
+    expect(provider.room?.id).toBe('manual-room')
+    expect(provider.joins).toEqual(['room'])
     expect(controller.running).toBe(false)
   })
 

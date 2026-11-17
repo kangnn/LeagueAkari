@@ -84,16 +84,7 @@ function describeReason(reason?: string) {
   return i18next.t(`hextech-room-main.reasons.${reason}`, { defaultValue: String(reason) })
 }
 
-/**
- * How the client's join-rejection codes are reported, and whether the room is worth retrying.
- * A code the user has never seen before used to land in the log as the raw LCU line - method, path,
- * status, wrapper code - which buries the one word that explains the refusal.
- *
- *   park: "long"  the cause does not clear by waiting (a spent invitation record, a party with no
- *                 seat left, a role/team-state conflict), so the room sits out the long cooldown;
- *   park: "short" the cause is tied to the room's own state and may clear on its own;
- *   no park       the client is simply busy with the previous operation, so the next sweep is fine.
- */
+/** Join rejections with a room cooldown, or a client-busy response retried next sweep. */
 const SKIP_RULES: Readonly<Record<string, { reason: string; park?: string; message: string }>> =
   Object.freeze({
     PARTY_INVITE_LIMIT: {
@@ -158,7 +149,6 @@ export class SearchController {
   private _eligibleCount = 0
   private _selected: HextechLobby | undefined
   private _lastError: string | undefined
-  private _diagnostics: unknown[] | undefined
   // Lobby ids rejected during the current sweep. Cleared once a sweep is exhausted so the next
   // sweep retries them against a freshly fetched list.
   private _rejectedThisSweep = new Set<string>()
@@ -314,8 +304,7 @@ export class SearchController {
       belowFloor: this._belowFloor,
       watchDeadlineAt: this._watchDeadlineAt,
       maxInvites: this.policy.maxInvites,
-      nameKeywords: [...(this.policy.nameKeywords ?? [])],
-      diagnostics: this._diagnostics
+      nameKeywords: [...(this.policy.nameKeywords ?? [])]
     }
   }
 
@@ -540,21 +529,9 @@ export class SearchController {
     this._transition(STATES.idle, { type: 'stopped' })
   }
 
-  /**
-   * Explicit "leave room" for the joined state.
-   *
-   * The returned status carries `left`, which is true only when the client confirmed the party is gone.
-   * Callers that chain a leave into a new search depend on it: a failed DELETE used to be indistinguishable
-   * from a successful one (both left the state at `idle`, because `stop()` had already set it and the catch
-   * branch only recorded the error), so 「继续搜索」 sailed past its own guard and re-adopted the very room
-   * the user had asked to leave.
-   */
+  /** Reports whether the client confirmed leaving before another search can start. */
   async leave() {
     this.stop()
-    if (!this.provider.leaveLobby) return { ...this.status(), left: false }
-    // Tearing a party down is the client's work, and it can take seconds when invitations are pending or
-    // the client is busy. Saying so up front keeps the UI from showing "已停止" and then nothing at all
-    // until the client finally answers.
     this._emit({ type: 'leaving', message: i18next.t('hextech-room-main.leaving') })
     const startedAt = this.clock()
     try {
@@ -693,7 +670,6 @@ export class SearchController {
       // The client answered, so whatever failed before is over. Without this a single stalled request
       // left "最近错误" showing for the rest of the session even though the search had recovered.
       this._lastError = undefined
-      this._diagnostics = undefined
       if (this._stale(signal)) return
       this._lastRefreshAt = this.clock()
       this._candidateCount = lobbies.length
@@ -829,6 +805,10 @@ export class SearchController {
         })
         const current = await this.provider.currentLobby({ signal })
         if (this._stale(signal)) return
+        if (current && current.id !== candidate.lobby.id) {
+          this.stop()
+          return
+        }
         let verification = this._verify(current, candidate.lobby.id)
         if (
           verification.ok &&
@@ -919,7 +899,6 @@ export class SearchController {
       if (this._stale(signal)) return
       const message = describe(error)
       this._lastError = message
-      if (Array.isArray(error?.attempts)) this._diagnostics = error.attempts
       if (error?.fatal) {
         this._running = false
         clearTimeout(this._timer)
@@ -972,7 +951,6 @@ export class SearchController {
       }
       // Same as in the sweep: a successful read clears whatever the previous failure left behind.
       this._lastError = undefined
-      this._diagnostics = undefined
       this._watchDelayMs = 0
     } catch (caughtError) {
       const error = asHextechRoomError(caughtError)
@@ -986,7 +964,6 @@ export class SearchController {
     if (this._stale(signal) || !this._watchJoined) return
     if (current) {
       this._lastError = undefined
-      this._diagnostics = undefined
       this._watchDelayMs = 0
     }
     if (!current) {
@@ -1000,6 +977,10 @@ export class SearchController {
         type: 'room-gone',
         message: i18next.t('hextech-room-main.room-gone')
       })
+    }
+    if (this._selected && current.id !== this._selected.id) {
+      this.stop()
+      return
     }
     const playerCount = Number(current?.playerCount) || 0
     if (playerCount > this._watchPlayerCount) {

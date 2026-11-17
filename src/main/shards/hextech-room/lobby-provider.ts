@@ -19,7 +19,6 @@ export interface CustomLobbyPayload {
   filledPlayerSlots?: number
   playerCount?: number
   hasPassword?: boolean
-  gameType?: string
   joinable?: boolean
   createdAt?: string | number
   creationDate?: string | number
@@ -61,8 +60,6 @@ interface LobbyConfiguration {
 export function normalizeBrowserLobby(raw: CustomLobbyPayload): HextechLobby {
   return {
     id: String(raw.partyId ?? raw.id),
-    browserId: typeof raw.id === 'number' ? raw.id : undefined,
-    gameType: raw.gameType,
     name: raw.lobbyName ?? raw.name,
     mapId: raw.mapId,
     teamSize: raw.teamSize ?? (raw.maxPlayerSlots === 10 ? 5 : undefined),
@@ -147,9 +144,6 @@ export function normalizeJoinedLobby(raw: CustomLobbyPayload): HextechLobby {
     joinable: true,
     joined: true,
     inviteCount: raw.invitations?.length,
-    pendingInviteCount: raw.invitations?.filter(
-      (invitation) => String(invitation.state ?? '').toLowerCase() === 'pending'
-    ).length,
     createdAt: raw.createdAt ?? raw.creationDate,
     gameMode: configuration.gameMode,
     gameMutator:
@@ -172,7 +166,6 @@ function requestError(
   return error
 }
 
-/** Uses Akari's authenticated connection; never discovers credentials or creates a second socket. */
 export class HextechLobbyApiProvider implements HextechLobbyProvider {
   constructor(private readonly _getClient: () => AxiosInstance) {}
 
