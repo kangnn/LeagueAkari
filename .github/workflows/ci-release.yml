@@ -109,6 +109,9 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Run tests
+        run: yarn test --maxWorkers=2
+
       - name: Set CI package version
         if: github.ref == 'refs/heads/dev'
         shell: bash
