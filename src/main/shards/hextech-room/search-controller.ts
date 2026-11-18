@@ -26,23 +26,13 @@ interface SearchOptions {
   sweepIntervalMs?: number
   maxSweepIntervalMs?: number
   refreshThrottleMs?: number
-  exhaustedCooldownMs?: number
-  populationCooldownMs?: number
   stallTimeoutMs?: number
-  inviteLimitCooldownMs?: number
   watchIntervalFloorMs?: number
   attemptGapMs?: number
   pushDebounceMs?: number
   maxAttemptsPerSweep?: number
   clock?: () => number
   emit?: (event: HextechRoomEvent) => void
-}
-
-interface ParkedRoom {
-  playerCount: number
-  reason?: string
-  minPlayers: number
-  expiresAt: number
 }
 
 export const STATES = Object.freeze({
@@ -84,35 +74,29 @@ function describeReason(reason?: string) {
   return i18next.t(`hextech-room-main.reasons.${reason}`, { defaultValue: String(reason) })
 }
 
-/** Join rejections with a room cooldown, or a client-busy response retried next sweep. */
-const SKIP_RULES: Readonly<Record<string, { reason: string; park?: string; message: string }>> =
-  Object.freeze({
-    PARTY_INVITE_LIMIT: {
-      reason: 'invite-limit',
-      park: 'long',
-      message: 'invite-limit'
-    },
-    PARTY_SIZE_LIMIT: {
-      reason: 'not-joinable',
-      park: 'long',
-      message: 'room-full'
-    },
-    INVALID_ROLE_TRANSITION: {
-      reason: 'not-joinable',
-      park: 'long',
-      message: 'role-conflict'
-    },
-    INVALID_GAME_VERSION: {
-      reason: 'not-joinable',
-      park: 'short',
-      message: 'version-mismatch'
-    },
-    INVALID_WHILE_PARTY_IN_ACTION: {
-      reason: 'not-joinable',
-      park: undefined,
-      message: 'client-busy'
-    }
-  })
+/** Localized explanations for client join rejections. */
+const SKIP_RULES: Readonly<Record<string, { reason: string; message: string }>> = Object.freeze({
+  PARTY_INVITE_LIMIT: {
+    reason: 'invite-limit',
+    message: 'invite-limit'
+  },
+  PARTY_SIZE_LIMIT: {
+    reason: 'not-joinable',
+    message: 'room-full'
+  },
+  INVALID_ROLE_TRANSITION: {
+    reason: 'not-joinable',
+    message: 'role-conflict'
+  },
+  INVALID_GAME_VERSION: {
+    reason: 'not-joinable',
+    message: 'version-mismatch'
+  },
+  INVALID_WHILE_PARTY_IN_ACTION: {
+    reason: 'not-joinable',
+    message: 'client-busy'
+  }
+})
 
 /**
  * The code that explains an LCU rejection. `errorCode` is only the wrapper the client puts around
@@ -152,13 +136,6 @@ export class SearchController {
   // Lobby ids rejected during the current sweep. Cleared once a sweep is exhausted so the next
   // sweep retries them against a freshly fetched list.
   private _rejectedThisSweep = new Set<string>()
-  // Rooms this run left because their invitation budget was spent while they were still too small.
-  // A spent budget never refills, so the room is only re-entered once the browser shows a bigger
-  // room than the one that was abandoned, or after the cooldown - otherwise the search would join
-  // and leave the same hopeless room on every sweep.
-  private _exhaustedRooms = new Map<string, ParkedRoom>()
-  // Player counts of the newest browser snapshot, keyed by room id. Replaced on every sweep.
-  private _snapshotCounts = new Map<string, number>()
   private _sweepDelayMs: number
   private _sweepCount = 0
   private _lastForcedRefreshAt = Number.NEGATIVE_INFINITY
@@ -171,8 +148,6 @@ export class SearchController {
   private _nextSearchAt = 0
   private _retryAt = 0
   private _attemptedSnapshots = new Map<string, string>()
-  private _cooldownCount = 0
-  private _nextRoomRetryAt: number | undefined
   private _watchTask: { signal: AbortSignal } | undefined
   private _pendingWatch: { lobby?: HextechLobby } | undefined
   // A joined room is watched until it fills, spends its invitation budget, or stops growing below the
@@ -206,10 +181,7 @@ export class SearchController {
   sweepIntervalMs: number
   maxSweepIntervalMs: number
   refreshThrottleMs: number
-  exhaustedCooldownMs: number
-  populationCooldownMs: number
   stallTimeoutMs: number
-  inviteLimitCooldownMs: number
   watchIntervalFloorMs: number
   attemptGapMs: number
   pushDebounceMs: number
@@ -231,19 +203,10 @@ export class SearchController {
       maxSweepIntervalMs = 15_000,
       // The client is asked to re-scan its lobby browser at most this often.
       refreshThrottleMs = 3_000,
-      // How long a room abandoned for a spent invitation budget stays out of the running when the
-      // browser still reports it as unchanged.
-      exhaustedCooldownMs = 120_000,
-      // Population is transient, and the browser may never update its stale slot count.
-      // Recheck a small room soon without repeatedly joining it at the list poll cadence.
-      populationCooldownMs = 10_000,
       // How long a watched room may sit below the player floor without gaining a single player before
       // it is abandoned. A room that keeps filling never reaches this, because progress resets it.
       // 0 makes the floor a hard gate: such a room is left on the very first check.
       stallTimeoutMs = 30_000,
-      // A party whose invitation list is already full refuses browser joins outright
-      // (HTTP 400 / PARTY_INVITE_LIMIT), so it is set aside for far longer than a merely stale room.
-      inviteLimitCooldownMs = 600_000,
       // The watch loop (holding a joined room) never polls faster than this, even when the browser
       // poll interval is small: every watch rule works on seconds, so a faster tick is pure load.
       // 0 disables the floor - the tests drive time with 10ms intervals.
@@ -263,10 +226,7 @@ export class SearchController {
     this.sweepIntervalMs = sweepIntervalMs
     this.maxSweepIntervalMs = Math.max(maxSweepIntervalMs, sweepIntervalMs)
     this.refreshThrottleMs = refreshThrottleMs
-    this.exhaustedCooldownMs = exhaustedCooldownMs
-    this.populationCooldownMs = populationCooldownMs
     this.stallTimeoutMs = stallTimeoutMs
-    this.inviteLimitCooldownMs = inviteLimitCooldownMs
     this.watchIntervalFloorMs = watchIntervalFloorMs
     this.attemptGapMs = attemptGapMs
     this.pushDebounceMs = pushDebounceMs
@@ -292,8 +252,6 @@ export class SearchController {
       lastRefreshAt: this._lastRefreshAt,
       candidateCount: this._candidateCount,
       eligibleCount: this._eligibleCount,
-      cooldownCount: this._cooldownCount,
-      nextRoomRetryAt: this._nextRoomRetryAt,
       sweepCount: this._sweepCount,
       sweepIntervalMs: this.sweepIntervalMs,
       selectedSummary: summarizeLobby(this._selected),
@@ -412,8 +370,6 @@ export class SearchController {
     this._sweepDelayMs = this.sweepIntervalMs
     this._sweepCount = 0
     this._rejectedThisSweep.clear()
-    this._exhaustedRooms.clear()
-    this._snapshotCounts = new Map()
     this._lastForcedRefreshAt = Number.NEGATIVE_INFINITY
     this._hasPendingList = false
     this._pendingList = undefined
@@ -421,8 +377,6 @@ export class SearchController {
     this._nextSearchAt = 0
     this._retryAt = 0
     this._attemptedSnapshots.clear()
-    this._cooldownCount = 0
-    this._nextRoomRetryAt = undefined
     this._pendingWatch = undefined
     this._watchJoined = false
     this._watchingSummary = undefined
@@ -564,10 +518,6 @@ export class SearchController {
   private async _exhaustSweep(signal: AbortSignal, { attempted }: { attempted?: number } = {}) {
     this._sweepCount += 1
     this._rejectedThisSweep.clear()
-    // Expired entries are dropped here so an all-night run cannot accumulate dead room ids.
-    for (const [id, record] of this._exhaustedRooms) {
-      if (this.clock() >= record.expiresAt) this._exhaustedRooms.delete(id)
-    }
     // Fire and forget, for the same reason as in `_cycle`: the client's rescan and the backoff
     // sleep now overlap instead of adding up before the next sweep.
     void this._maybeRefresh(signal)
@@ -674,43 +624,17 @@ export class SearchController {
       this._lastRefreshAt = this.clock()
       this._candidateCount = lobbies.length
 
-      this._snapshotCounts = new Map(
-        lobbies.map((lobby) => [String(lobby.id), Number(lobby.playerCount) || 0])
-      )
       const ranked = rankLobbies(lobbies, this.policy)
       this._eligibleCount = ranked.length
       const backingOff = this.clock() < this._retryAt
       if (!backingOff) this._attemptedSnapshots.clear()
       // Only a new or changed eligible candidate may bypass the retry delay. Churn in
       // unrelated rows must not turn an unchanged busy room into two join requests per second.
-      const unparked = ranked.filter(({ lobby }) => !this._isExhaustedRoom(lobby))
-      this._cooldownCount = ranked.length - unparked.length
-      this._nextRoomRetryAt = this._cooldownCount
-        ? Math.min(
-            ...ranked
-              .filter(({ lobby }) => this._isExhaustedRoom(lobby))
-              .map(({ lobby }) => this._exhaustedRooms.get(String(lobby.id))!.expiresAt)
-          )
-        : undefined
-      if (ranked.length > 0 && unparked.length === 0) {
-        // No join was attempted. Do not invent another failed sweep or extend retryAt.
-        // The per-room records already provide pacing; new rooms still bypass them.
-        this._rejectedThisSweep.clear()
-        this._selected = undefined
-        this._emit({
-          type: 'cooldown-wait',
-          message: i18next.t('hextech-room-main.cooldown-wait')
-        })
-        return this._schedule(
-          signal,
-          Math.min(this.intervalMs, (this._nextRoomRetryAt ?? this.clock()) - this.clock())
-        )
-      }
       const available = backingOff
-        ? unparked.filter(
+        ? ranked.filter(
             ({ lobby }) => this._attemptedSnapshots.get(String(lobby.id)) !== listSignature([lobby])
           )
-        : unparked
+        : ranked
       if (backingOff && available.length === 0) {
         this._emit({ type: 'searching', message: i18next.t('hextech-room-main.refreshing') })
         return this._schedule(signal, Math.min(this.intervalMs, this._retryAt - this.clock()))
@@ -723,13 +647,10 @@ export class SearchController {
       }
 
       const retryable = available.filter(
-        (candidate) =>
-          !this._rejectedThisSweep.has(String(candidate.lobby.id)) &&
-          !this._isExhaustedRoom(candidate.lobby)
+        (candidate) => !this._rejectedThisSweep.has(String(candidate.lobby.id))
       )
       if (retryable.length === 0) {
-        // Nothing left to attempt: every room was rejected, or the rest are known-dead rooms.
-        // Either way the next sweep starts over from a freshly fetched list.
+        // Start the next sweep from a freshly fetched list after all candidates were tried.
         return this._exhaustSweep(signal, { attempted: 0 })
       }
 
@@ -773,16 +694,9 @@ export class SearchController {
             // The client reports rejections as errorCode "RPC_ERROR" with the meaningful code in
             // the message body, so matching the code field alone never fired - every rejection
             // showed the raw HTTP line instead of an explanation. The rules table carries the
-            // explanation and the parking decision for each code the log has seen so far.
+            // explanation and the rejection reason for each code.
             const code = rejectionCode(error)
             const rule = code ? SKIP_RULES[code] : undefined
-            if (rule?.park === 'long')
-              this._rememberExhausted(
-                candidate.lobby,
-                this.inviteLimitCooldownMs,
-                code === 'PARTY_INVITE_LIMIT' ? 'invite-limit' : undefined
-              )
-            else if (rule?.park === 'short') this._rememberExhausted(candidate.lobby)
             if (code === 'INVALID_GAME_VERSION') this._noteVersionMismatch(candidate.lobby)
             this._emit({
               type: 'skipped',
@@ -854,25 +768,6 @@ export class SearchController {
         this._delayMs = this.intervalMs
         // Without this the same wrong-mode room would be joined and left on every sweep.
         this._rejectedThisSweep.add(String(candidate.lobby.id))
-        if (verification.reason === 'invites-exhausted') {
-          // This room's invitation list is already at the cap, which is the same dead end the browser
-          // refuses outright with PARTY_INVITE_LIMIT. Remembering it only for the current sweep was not
-          // enough: the next sweep forgot it and joined the same hopeless room again, burning a join
-          // attempt, a leave, and an extra LCU round trip every minute.
-          this._rememberExhausted(
-            current ?? candidate.lobby,
-            this.inviteLimitCooldownMs,
-            'invites-exhausted'
-          )
-        } else if (verification.reason === 'too-few-players') {
-          this._rememberExhausted(
-            current ?? candidate.lobby,
-            this.populationCooldownMs,
-            'too-few-players'
-          )
-        } else {
-          this._rememberExhausted(candidate.lobby)
-        }
         const immediateFloor = verification.reason === 'too-few-players'
         this._transition(STATES.searching, {
           type: immediateFloor ? 'left-stalled-room' : 'rejected-after-join',
@@ -1057,7 +952,7 @@ export class SearchController {
   }
 
   /**
-   * Leaves a watched room that cannot pay off, remembers it, and resumes the search. The tool only
+   * Leaves a stalled room and resumes the search. The tool only
    * ever does this to a room it joined itself; a room the user was already sitting in is never left.
    */
   private async _abandonRoom(
@@ -1068,11 +963,6 @@ export class SearchController {
     await this.provider.leaveLobby({ signal })
     if (this._stale(signal)) return
     this._rejectedThisSweep.add(String(current.id))
-    this._rememberExhausted(
-      current,
-      type === 'left-stalled-room' ? this.populationCooldownMs : this.inviteLimitCooldownMs,
-      type === 'left-stalled-room' ? 'too-few-players' : 'invites-exhausted'
-    )
     this._watchJoined = false
     this._watchingSummary = undefined
     this._belowFloor = false
@@ -1131,27 +1021,6 @@ export class SearchController {
       message: i18next.t('hextech-room-main.version-warning', {
         count: this._versionMismatchRooms.size
       })
-    })
-  }
-
-  /**
-   * Remember why a room was parked. Joined counts include us; browser counts do not.
-   * Keep the high-water mark in browser units so a near-full room can recover one player earlier.
-   */
-  private _rememberExhausted(
-    lobby: HextechLobby,
-    cooldownMs = this.exhaustedCooldownMs,
-    reason?: string
-  ) {
-    const id = String(lobby.id)
-    this._exhaustedRooms.set(id, {
-      playerCount: Math.max(
-        (Number(lobby.playerCount) || 0) - (lobby.joined ? 1 : 0),
-        this._snapshotCounts.get(id) ?? 0
-      ),
-      reason,
-      minPlayers: Number(this.policy.minPlayers) || 0,
-      expiresAt: this.clock() + cooldownMs
     })
   }
 
@@ -1227,32 +1096,6 @@ export class SearchController {
     if (!result.eligible)
       return { ok: false, reason: result.reason, modeVerified: result.modeVerified }
     return { ok: true, modeVerified: result.modeVerified === true }
-  }
-
-  /**
-   * Population growth only helps when it can close the actual gap. A known explicit
-   * PARTY_INVITE_LIMIT refusal is different: more players do not reopen invitation capacity.
-   * All records expire, because even an unchanged browser snapshot can be stale.
-   */
-  private _isExhaustedRoom(lobby: HextechLobby) {
-    const id = String(lobby.id)
-    const record = this._exhaustedRooms.get(id)
-    if (!record) return false
-    const players = Number(lobby.playerCount) || 0
-    const floor = Number(this.policy.minPlayers) || 0
-    const gapRequired =
-      record.reason === 'invites-exhausted' ||
-      (record.reason === 'too-few-players' && this.stallTimeoutMs === 0)
-    const grown = players > record.playerCount || (gapRequired && floor < record.minPlayers)
-    const recovered =
-      record.reason !== 'invite-limit' && grown && (!gapRequired || players + 1 >= floor)
-    if (this.clock() >= record.expiresAt || recovered) {
-      this._exhaustedRooms.delete(id)
-      // A recovered per-room cooldown must not fall back into the unrelated sweep backoff.
-      this._attemptedSnapshots.delete(id)
-      return false
-    }
-    return true
   }
 
   private _schedule(signal: AbortSignal, delay = this._delayMs) {

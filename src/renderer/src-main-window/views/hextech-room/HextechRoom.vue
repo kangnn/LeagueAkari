@@ -43,9 +43,6 @@
                 t('hextechRoom.matched', { count: store.status?.eligibleCount ?? 0 })
               }}</span>
               <span>{{
-                t('hextechRoom.cooling', { count: store.status?.cooldownCount ?? 0 })
-              }}</span>
-              <span>{{
                 t('hextechRoom.lastRefresh', { time: formatTime(store.status?.lastRefreshAt) })
               }}</span>
             </div>
@@ -54,9 +51,6 @@
             </div>
             <NText v-if="store.status?.belowFloor" depth="3">{{
               t('hextechRoom.floorWait', { seconds: secondsUntil(store.status.watchDeadlineAt) })
-            }}</NText>
-            <NText v-if="store.status?.nextRoomRetryAt" depth="3">{{
-              t('hextechRoom.retryWait', { seconds: secondsUntil(store.status.nextRoomRetryAt) })
             }}</NText>
             <NText v-if="!canSearch" depth="3">{{ t('hextechRoom.unavailable') }}</NText>
           </div>

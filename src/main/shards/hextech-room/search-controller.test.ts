@@ -103,47 +103,55 @@ describe('custom room search behavior', () => {
     expect(provider.left).toBe(0)
   })
 
-  it('cools a small room for ten seconds when the configured wait is zero', async () => {
+  it('retries an unchanged small room on the next sweep', async () => {
     const provider = new Provider()
-    const controller = search(provider, { stallTimeoutMs: 0, intervalMs: 500 })
+    const controller = search(provider, {
+      stallTimeoutMs: 0,
+      intervalMs: 500,
+      sweepIntervalMs: 1000,
+      maxSweepIntervalMs: 1000
+    })
     await controller.start()
     expect(provider.left).toBe(1)
-    await vi.advanceTimersByTimeAsync(9500)
+    await vi.advanceTimersByTimeAsync(999)
     expect(provider.joins).toEqual(['room'])
-    expect(controller.status()).toMatchObject({ cooldownCount: 1, sweepCount: 1 })
-    await vi.advanceTimersByTimeAsync(500)
+    await vi.advanceTimersByTimeAsync(1)
     expect(provider.joins).toEqual(['room', 'room'])
+    expect(provider.left).toBe(2)
   })
 
-  it('wakes population cooldown only when growth can meet the floor including ourselves', async () => {
+  it('tries a changed room immediately with the latest population', async () => {
     const provider = new Provider()
     const controller = search(provider, { stallTimeoutMs: 0 })
     await controller.start()
     provider.rows = [candidate('room', 3)]
     controller.acceptLobbyListPush(provider.rows)
     await vi.advanceTimersByTimeAsync(200)
-    expect(provider.joins).toHaveLength(1)
+    expect(provider.joins).toHaveLength(2)
     provider.rows = [candidate('room', 4)]
     provider.currentPlayers = 5
     controller.acceptLobbyListPush(provider.rows)
     await vi.advanceTimersByTimeAsync(200)
-    expect(provider.joins).toHaveLength(2)
+    expect(provider.joins).toHaveLength(3)
     expect(controller.state).toBe('joined')
   })
 
-  it('does not wake an explicit invitation-limit refusal just because the room grows', async () => {
-    const provider = new Provider()
-    provider.joinFailure = Object.assign(new Error('PARTY_INVITE_LIMIT'), {
-      skip: true,
-      status: 400
-    })
-    const controller = search(provider)
-    await controller.start()
-    provider.rows = [candidate('room', 9)]
-    controller.acceptLobbyListPush(provider.rows)
-    await vi.advanceTimersByTimeAsync(20000)
-    expect(provider.joins).toHaveLength(1)
-  })
+  it.each(['PARTY_INVITE_LIMIT', 'PARTY_SIZE_LIMIT', 'INVALID_GAME_VERSION'])(
+    'retries a room rejected with %s on the next sweep',
+    async (code) => {
+      const provider = new Provider()
+      provider.joinFailure = Object.assign(new Error(code), { skip: true, status: 400 })
+      const controller = search(provider, {
+        intervalMs: 500,
+        sweepIntervalMs: 1000,
+        maxSweepIntervalMs: 1000
+      })
+      await controller.start()
+      expect(provider.joins).toEqual(['room'])
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(provider.joins).toEqual(['room', 'room'])
+    }
+  )
 
   it('tries a new room immediately while unchanged failures are backing off', async () => {
     const provider = new Provider()

@@ -201,7 +201,6 @@ hextech-room-main:
   adopted-below-floor: 'Already in a manually joined room. Population is {{players}}, below the minimum of {{floor}}; waiting for growth.'
   other-room: 'Already in another room ({{room}}). Leave it before searching.'
   leaving: Asking the client to leave the room…
-  cooldown-wait: Matching rooms are cooling down; watching for new rooms to try immediately
   refreshing: Refreshing the list; failed candidates are retried with backoff
   joining: Trying to join
   verifying: Joined; checking the mode and invitation capacity

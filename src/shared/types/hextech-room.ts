@@ -58,8 +58,6 @@ export interface HextechRoomStatus {
   lastRefreshAt?: number
   candidateCount: number
   eligibleCount: number
-  cooldownCount: number
-  nextRoomRetryAt?: number
   sweepCount: number
   sweepIntervalMs: number
   selectedSummary?: string

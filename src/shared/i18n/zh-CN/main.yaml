@@ -201,7 +201,6 @@ hextech-room-main:
   adopted-below-floor: '已在房间内（非本工具加入），人数 {{players}} 低于下限 {{floor}}，等待房间增长'
   other-room: '当前已在其他房间中（{{room}}），请先离开该房间再开始搜索。'
   leaving: 正在通知客户端退出房间…
-  cooldown-wait: 匹配房间均在冷却；持续刷新列表，新房间立即尝试
   refreshing: 持续刷新列表，失败候选按退避重试
   joining: 尝试加入
   verifying: 已进入房间，核对模式与邀请额度

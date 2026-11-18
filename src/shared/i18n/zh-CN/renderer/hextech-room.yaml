@@ -18,10 +18,8 @@ hextechRoom:
   noLogs: 尚无搜索记录
   unavailable: 请连接客户端，并在大厅空闲时开始搜索
   matched: '匹配 {{count}} 个房间'
-  cooling: '冷却 {{count}} 个房间'
   lastRefresh: '最近刷新：{{time}}'
   floorWait: '等待房间增长，约 {{seconds}} 秒后复查停滞'
-  retryWait: '最早冷却复查：{{seconds}} 秒后'
   sweepFinished: '本轮尝试 {{count}} 个房间，{{seconds}} 秒后重试；继续刷新新房间'
   noMatch: '已读取 {{count}} 个房间，暂无匹配'
   stopped: 已停止

@@ -19,11 +19,8 @@ hextechRoom:
   unavailable: Connect the client and return to an idle lobby to search
   matched_one: '{{count}} matching room'
   matched_other: '{{count}} matching rooms'
-  cooling_one: '{{count}} cooling room'
-  cooling_other: '{{count}} cooling rooms'
   lastRefresh: 'Last refresh: {{time}}'
   floorWait: 'Waiting for population growth; stall check in about {{seconds}}s'
-  retryWait: 'Earliest room retry in {{seconds}}s'
   sweepFinished_one: 'Tried {{count}} room; retry in {{seconds}}s while watching for new rooms'
   sweepFinished_other: 'Tried {{count}} rooms; retry in {{seconds}}s while watching for new rooms'
   noMatch_one: 'Read {{count}} room; no matches'
