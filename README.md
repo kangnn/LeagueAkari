@@ -11,9 +11,9 @@
 </div>
 
 <p align="center">
-    <a href="https://github.com/LeagueAkari/LeagueAkari/releases"><img src="https://img.shields.io/github/v/release/LeagueAkari/LeagueAkari?include_prereleases&style=flat-square&label=Version" alt="Latest version"></a>
-    <a href="https://github.com/LeagueAkari/LeagueAkari/releases">
-    <img src="https://img.shields.io/github/downloads/LeagueAkari/LeagueAkari/total?style=flat&label=Downloads"></a>
+    <a href="https://github.com/kangnn/LeagueAkari/releases"><img src="https://img.shields.io/github/v/release/kangnn/LeagueAkari?include_prereleases&style=flat-square&label=Version" alt="Latest version"></a>
+    <a href="https://github.com/kangnn/LeagueAkari/releases">
+    <img src="https://img.shields.io/github/downloads/kangnn/LeagueAkari/total?style=flat&label=Downloads"></a>
     <a href="https://github.com/LeagueAkari/LeagueAkari/stargazers">
     <img src="https://img.shields.io/github/stars/LeagueAkari/LeagueAkari?style=flat&label=Stars">
   </a>
@@ -25,7 +25,7 @@ A League of Legends client toolkit based on the LCU API.
 
 ## Download and Usage
 
-Download the latest Windows or macOS build from [GitHub Releases](https://github.com/LeagueAkari/LeagueAkari/releases).
+Download the latest Windows or macOS build from [GitHub Releases](https://github.com/kangnn/LeagueAkari/releases).
 
 Administrator privileges are not required. On Windows, some native shortcuts, overlays, and client-window utilities require administrator privileges.
 
